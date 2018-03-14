@@ -81,7 +81,7 @@
 
 	bt_rfkill {
 		compatible = "fsl,mxc_bt_rfkill";
-		bt-power-gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
+		bt-power-gpios = <&gpio3 6 GPIO_ACTIVE_LOW>;
 		status ="okay";
 	};
 
@@ -164,7 +164,6 @@
 			fsl,pins = <
 				MX8MQ_IOMUXC_NAND_READY_B_GPIO3_IO16		0x19
 				MX8MQ_IOMUXC_NAND_WE_B_GPIO3_IO17		0x19
-				MX8MQ_IOMUXC_NAND_WP_B_GPIO3_IO18		0x19
 			>;
 		};
 
@@ -224,29 +223,25 @@
 			>;
 		};
 
-		pinctrl_pcie1: pcie1grp {
+		pinctrl_pcie0: pcie0grp {
 			fsl,pins = <
 				MX8MQ_IOMUXC_I2C4_SCL_GPIO5_IO20        0x16 /* clk req */
 				MX8MQ_IOMUXC_NAND_DATA05_GPIO3_IO11     0x16 /* Disable - wl_regon */
 				MX8MQ_IOMUXC_NAND_DATA04_GPIO3_IO10     0x16 /* Reset - wl_nreset */
+				MX8MQ_IOMUXC_GPIO1_IO00_ANAMIX_REF_CLK_32K      0x05
+				MX8MQ_IOMUXC_NAND_DATA00_GPIO3_IO6      0x19
+			>;
+		};
+
+		pinctrl_pcie1: pcie1grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_NAND_WP_B_GPIO3_IO18       0x19 /* APEX_SYS_RST_L */
 			>;
 		};
 
 		pinctrl_dvfs: dvfsgrp {
 			fsl,pins = <
 				MX8MQ_IOMUXC_GPIO1_IO13_GPIO1_IO13	0x16
-			>;
-		};
-
-		pinctrl_qspi: qspigrp {
-			fsl,pins = <
-				MX8MQ_IOMUXC_NAND_ALE_QSPI_A_SCLK	0x82
-				MX8MQ_IOMUXC_NAND_CE0_B_QSPI_A_SS0_B	0x82
-				MX8MQ_IOMUXC_NAND_DATA00_QSPI_A_DATA0	0x82
-				MX8MQ_IOMUXC_NAND_DATA01_QSPI_A_DATA1	0x82
-				MX8MQ_IOMUXC_NAND_DATA02_QSPI_A_DATA2	0x82
-				MX8MQ_IOMUXC_NAND_DATA03_QSPI_A_DATA3	0x82
-
 			>;
 		};
 
@@ -710,15 +705,22 @@
 	};
 };
 
-&pcie1{
+&pcie0 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pcie1>;
+	pinctrl-0 = <&pinctrl_pcie0>;
 	clkreq-gpio = <&gpio5 20 GPIO_ACTIVE_LOW>;
 	disable-gpio = <&gpio3 11 GPIO_ACTIVE_LOW>;
 	reset-gpio = <&gpio3 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pcie1{
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pcie1>;
+	reset-gpio = <&gpio3 18 GPIO_ACTIVE_LOW>;
 	ext_osc = <1>;
 	hard-wired = <1>;
-	status = "disabled";
+	status = "okay";
 };
 
 &uart1 { /* console */

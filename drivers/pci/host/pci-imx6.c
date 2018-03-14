@@ -79,6 +79,7 @@ struct imx6_pcie {
 	struct clk		*pcie;
 	struct clk		*pcie_ext_src;
 	struct regmap		*iomuxc_gpr;
+	struct regmap           *ccm_base;
 	enum imx6_pcie_variants variant;
 	u32			hsio_cfg;
 	u32			tx_deemph_gen1;
@@ -267,6 +268,47 @@ struct imx6_pcie {
 #define IMX8MQ_GPC_PGC_PCIE2_BIT_OFFSET		12
 #define IMX8MQ_GPC_PCG_PCIE_CTRL_PCR		BIT(0)
 #define IMX8MQ_GPR_PCIE_REF_USE_PAD		BIT(9)
+
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_OFFSET        0x74
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_CKE           BIT(4)
+
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_SEL_MASK       0xF
+
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_OSC_25M        0x0
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_OSC_27M        0x1
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_HDMI_27M       0x2
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_CLK1_P_N       0x3
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_OSC32K         0x4
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_AUDIO_PLL1     0x5
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_AUDIO_PLL2     0x6
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_VIDEO_PLL1     0x7
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_GPU_PLL        0x8
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_VPU_PLL        0x9
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_ARM_PLL        0xA
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_SYS_PLL1       0xB
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_SYS_PLL2       0xC
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_SYS_PLL3       0xD
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_DRAM_PLL       0xE
+#define IMX8MQ_ANAMIX_PLLOUT_MONITOR_VIDEO_PLL2     0xF
+
+
+#define IMX8MQ_ANAMIX_HW_FRAC_PLLOUT_OFFSET        0x78
+
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_OFFSET                    0x7C
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_VIDEO_PLL2_DIV_MASK      (0x7 << 16)
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_VIDEO_PLL2_DIV_SHIFT     (16)
+
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_DRAM_PLL_DIV_MASK        (0x7 << 12)
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_DRAM_PLL_DIV_SHIFT       (12)
+
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_SYS_PLL3_DIV_MASK        (0x7 << 8)
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_SYS_PLL3_DIV_SHIFT       (8)
+
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_SYS_PLL2_DIV_MASK        (0x7 << 4)
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_SYS_PLL2_DIV_SHIFT       (4)
+
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_SYS_PLL1_DIV_MASK        (0x7 << 0)
+#define IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_SYS_PLL1_DIV_SHIFT       (0)
 
 static int pcie_phy_poll_ack(struct imx6_pcie *imx6_pcie, int exp_val)
 {
@@ -1064,9 +1106,16 @@ static void imx6_pcie_init_phy(struct imx6_pcie *imx6_pcie)
 		else
 			val = IOMUXC_GPR16;
 
-		regmap_update_bits(imx6_pcie->iomuxc_gpr, val,
-				IMX8MQ_GPR_PCIE_REF_USE_PAD,
-				IMX8MQ_GPR_PCIE_REF_USE_PAD);
+		if (imx6_pcie->ext_osc) {
+			regmap_update_bits(imx6_pcie->iomuxc_gpr, val,
+					IMX8MQ_GPR_PCIE_REF_USE_PAD,
+					IMX8MQ_GPR_PCIE_REF_USE_PAD);
+		} else {
+			regmap_update_bits(imx6_pcie->iomuxc_gpr, val,
+					IMX8MQ_GPR_PCIE_REF_USE_PAD,
+					0);
+		}
+
 	} else if (imx6_pcie->variant == IMX7D) {
 		/* Enable PCIe PHY 1P0D */
 		regulator_set_voltage(imx6_pcie->pcie_phy_regulator,
@@ -2219,6 +2268,24 @@ static int imx6_pcie_probe(struct platform_device *pdev)
 				"imx8mq pcie phy src missing or invalid\n");
 			return PTR_ERR(imx6_pcie->reg_gpc);
 		}
+
+		if (!imx6_pcie->ext_osc) {
+			imx6_pcie->ccm_base=syscon_regmap_lookup_by_compatible("fsl,imx8mq-anatop");
+			regmap_update_bits(imx6_pcie->ccm_base,
+				IMX8MQ_ANAMIX_PLLOUT_MONITOR_OFFSET,
+				IMX8MQ_ANAMIX_PLLOUT_MONITOR_SEL_MASK,
+				IMX8MQ_ANAMIX_PLLOUT_MONITOR_SYS_PLL1);
+			regmap_update_bits(imx6_pcie->ccm_base,
+				IMX8MQ_ANAMIX_PLLOUT_MONITOR_OFFSET,
+				IMX8MQ_ANAMIX_PLLOUT_MONITOR_CKE,
+				IMX8MQ_ANAMIX_PLLOUT_MONITOR_CKE);
+
+			/* SYS_PLL1 is 800M, PCIE REF CLK is 100M */
+			regmap_update_bits(imx6_pcie->ccm_base,
+				IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_OFFSET,
+				IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_SYS_PLL1_DIV_MASK,
+				0x7 << IMX8MQ_ANAMIX_HW_SSCG_PLLOUT_SYS_PLL1_DIV_SHIFT);		}
+
 	} else if (imx6_pcie->variant == IMX6SX) {
 		imx6_pcie->pcie_inbound_axi = devm_clk_get(&pdev->dev,
 				"pcie_inbound_axi");
