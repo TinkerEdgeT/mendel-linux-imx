@@ -47,6 +47,7 @@ dtb-$(CONFIG_ARCH_FSL_IMX8MQ) += fsl-imx8mq-ddr3l-arm2.dtb \
 				 fsl-imx8mq-evk-mipi-csi2.dtb \
 				 fsl-imx8mq-evk-pdm.dtb \
 				 fsl-imx8mq-phanbell-dcss-rm67191.dtb \
+				 fsl-imx8mq-phanbell.dtb \
 				 fsl-imx8mq-evk-dcss-adv7535.dtb \
 				 fsl-imx8mq-evk-dcss-rm67191.dtb \
 				 fsl-imx8mq-evk-dual-display.dtb \
