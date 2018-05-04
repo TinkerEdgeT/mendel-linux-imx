@@ -39,6 +39,44 @@
 	};
 };
 
+&iomuxc {
+        imx8mq-phanbell {
+		pinctrl_pcie0: pcie0grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_I2C4_SCL_GPIO5_IO20        0x16 /* clk req */
+				MX8MQ_IOMUXC_NAND_DATA05_GPIO3_IO11     0x16 /* Disable - wl_regon */
+				MX8MQ_IOMUXC_NAND_DATA04_GPIO3_IO10     0x16 /* Reset - wl_nreset */
+				MX8MQ_IOMUXC_GPIO1_IO00_ANAMIX_REF_CLK_32K      0x05
+				MX8MQ_IOMUXC_NAND_DATA00_GPIO3_IO6      0x19
+			>;
+		};
+
+		pinctrl_pcie1: pcie1grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_NAND_WP_B_GPIO3_IO18       0x19 /* APEX_SYS_RST_L */
+			>;
+		};
+	};
+};
+
+&pcie0 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pcie0>;
+	clkreq-gpio = <&gpio5 20 GPIO_ACTIVE_LOW>;
+	disable-gpio = <&gpio3 11 GPIO_ACTIVE_LOW>;
+	reset-gpio = <&gpio3 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&pcie1 {
+       pinctrl-names = "default";
+       pinctrl-0 = <&pinctrl_pcie1>;
+       reset-gpio = <&gpio3 18 GPIO_ACTIVE_LOW>;
+       ext_osc = <1>;
+       hard-wired = <1>;
+       status = "okay";
+};
+
 / {
 	model = "Freescale i.MX8MQ Phanbell";
 	compatible = "fsl,imx8mq-phanbell", "fsl,imx8mq";
