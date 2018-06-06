@@ -227,6 +227,17 @@
 	status = "okay";
 };
 
+&i2c1 {
+	status = "okay";
+
+	asic_pmic: isl91301@1f {
+	 compatible = "isl91301";
+	 reg = <0x1f>;
+	 status = "okay";
+	};
+
+};
+
 &i2c3 {
 	status = "okay";
 

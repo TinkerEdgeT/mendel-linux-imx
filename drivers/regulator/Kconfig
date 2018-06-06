@@ -291,6 +291,12 @@ config REGULATOR_ISL6271A
 	help
 	  This driver supports ISL6271A voltage regulator chip.
 
+config REGULATOR_ISL91301
+	tristate "Renesas ISL91301 regulator"
+	depends on I2C
+	help
+	  This driver supports ISL91301 voltage regulator chip.
+
 config REGULATOR_LM363X
 	tristate "TI LM363X voltage regulators"
 	depends on MFD_TI_LMU
