@@ -826,7 +826,7 @@ static irqreturn_t bd71837_pmic_interrupt(int irq, void *pwrsys)
  @retval 0 success
  @retval negative fail
 */
-static __init int bd71837_probe(struct platform_device *pdev)
+static int bd71837_probe(struct platform_device *pdev)
 {
 	struct bd71837_pmic *pmic;
 	struct bd71837_board *pdata;
