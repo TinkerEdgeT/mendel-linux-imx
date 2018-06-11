@@ -195,9 +195,11 @@ static void __dev_sort_resources(struct pci_dev *dev,
 {
 	u16 class = dev->class >> 8;
 
+#if 0   // temporarily removed for Darwinn
 	/* Don't touch classless devices or host bridges or ioapics.  */
 	if (class == PCI_CLASS_NOT_DEFINED || class == PCI_CLASS_BRIDGE_HOST)
 		return;
+#endif
 
 	/* Don't touch ioapic devices already enabled by firmware */
 	if (class == PCI_CLASS_SYSTEM_PIC) {
