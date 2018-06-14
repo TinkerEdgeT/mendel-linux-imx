@@ -47,7 +47,6 @@
 				MX8MQ_IOMUXC_NAND_DATA05_GPIO3_IO11     0x16 /* Disable - wl_regon */
 				MX8MQ_IOMUXC_NAND_DATA04_GPIO3_IO10     0x16 /* Reset - wl_nreset */
 				MX8MQ_IOMUXC_GPIO1_IO00_ANAMIX_REF_CLK_32K      0x05
-				MX8MQ_IOMUXC_NAND_DATA00_GPIO3_IO6      0x19
 			>;
 		};
 
