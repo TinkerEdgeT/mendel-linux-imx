@@ -21,10 +21,12 @@ struct rt5645_platform_data {
 	/* 0 = IN2P; 1 = GPIO6; 2 = GPIO10; 3 = GPIO12 */
 
 	unsigned int jd_mode;
-	/* Use level triggered irq */
-	bool level_trigger_irq;
-	/* Invert JD1_1 status polarity */
-	bool inv_jd1_1;
+
+	/* Invert JD when jack insert */
+	bool jd_invert;
+
+	/* Toggle HPO_L voltage low during a jack detect event */
+	bool jd_low_volt_enable;
 };
 
 #endif
