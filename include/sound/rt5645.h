@@ -23,6 +23,9 @@ struct rt5645_platform_data {
 	unsigned int jd_mode;
 	/* Invert JD when jack insert */
 	bool jd_invert;
+
+	/* Toggle HPO_L voltage low during a jack detect event */
+	bool jd_low_volt_enable;
 };
 
 #endif
