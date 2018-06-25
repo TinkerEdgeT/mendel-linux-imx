@@ -112,6 +112,7 @@
 					MX8MQ_IOMUXC_SAI2_MCLK_SAI2_MCLK        0xd6
 					MX8MQ_IOMUXC_SAI2_TXD0_SAI2_TX_DATA0    0xd6
 					MX8MQ_IOMUXC_SAI2_RXD0_SAI2_RX_DATA0    0xd6
+					MX8MQ_IOMUXC_SPDIF_RX_GPIO5_IO4         0xd6
 				>;
 		};
 	};
@@ -248,6 +249,12 @@
 		clock-names = "mclk1";
 		status = "okay";
 		realtek,dmic1-data-pin = <2>; // GPIO5
+		realtek,jd-mode = <0>;
+		realtek,jd-invert;
+		realtek,jd-low-volt-enable;
+		interrupt-parent = <&gpio5>;
+		interrupts = <4 IRQ_TYPE_EDGE_BOTH>;
+		hp-detect-gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
 	};
 };
 
