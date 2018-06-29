@@ -150,6 +150,9 @@ else
 	cp arch/$ARCH/boot/$KBUILD_IMAGE "$tmpdir/$installed_image_path"
 fi
 
+# EDIT(aiy): Add a symlink from /boot/Image to the kernel binary
+ln -sf $(basename $installed_image_path) $tmpdir/boot/Image
+
 if grep -q "^CONFIG_OF=y" $KCONFIG_CONFIG ; then
 	# Only some architectures with OF support have this target
 	if grep -q dtbs_install "${srctree}/arch/$SRCARCH/Makefile"; then
