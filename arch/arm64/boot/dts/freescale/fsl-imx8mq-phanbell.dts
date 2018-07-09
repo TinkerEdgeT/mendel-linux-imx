@@ -94,6 +94,7 @@
 		audio-routing =
 			"CPU-Playback", "AIF1 Playback",
 			"AIF1 Capture", "CPU-Capture",
+			"IN1P", "AMIC",
 			"Ext Spk", "SPOL",
 			"Ext Spk", "SPOR",
 			"DMIC L1", "DMIC",
