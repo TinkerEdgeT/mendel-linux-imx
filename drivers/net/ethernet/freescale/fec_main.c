@@ -4019,7 +4019,7 @@ static int __maybe_unused fec_runtime_suspend(struct device *dev)
 
 	clk_disable_unprepare(fep->clk_ahb);
 	clk_disable_unprepare(fep->clk_ipg);
-#if !defined(IMX8MQ_PHANBELL_ENET_POWERSAVE)
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	release_bus_freq(BUS_FREQ_HIGH);
 #endif
 
@@ -4032,7 +4032,7 @@ static int __maybe_unused fec_runtime_resume(struct device *dev)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	int ret;
 
-#if !defined(IMX8MQ_PHANBELL_ENET_POWERSAVE)
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	request_bus_freq(BUS_FREQ_HIGH);
 #endif
 	ret = clk_prepare_enable(fep->clk_ahb);
