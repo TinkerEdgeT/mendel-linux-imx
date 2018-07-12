@@ -19,8 +19,11 @@
 #include <linux/clk.h>
 #include <linux/pm_runtime.h>
 #include <linux/busfreq-imx.h>
-#include <linux/pm_qos.h>
 #include <video/imx-dcss.h>
+
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
+#include <linux/pm_qos.h>
+#endif
 
 #include <drm/drm_fourcc.h>
 
@@ -492,7 +495,9 @@ static int dcss_suspend(struct device *dev)
 
 	dcss_clocks_enable(dcss, false);
 
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	pm_qos_remove_request(&dcss->pm_qos_req);
+#endif
 
 	dcss_bus_freq(dcss, false);
 
@@ -509,7 +514,9 @@ static int dcss_resume(struct device *dev)
 
 	dcss_bus_freq(dcss, true);
 
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	pm_qos_add_request(&dcss->pm_qos_req, PM_QOS_CPU_DMA_LATENCY, 0);
+#endif
 
 	dcss_clocks_enable(dcss, true);
 
@@ -534,7 +541,9 @@ static int dcss_runtime_suspend(struct device *dev)
 
 	dcss_clocks_enable(dcss, false);
 
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	pm_qos_remove_request(&dcss->pm_qos_req);
+#endif
 
 	dcss_bus_freq(dcss, false);
 
@@ -548,7 +557,9 @@ static int dcss_runtime_resume(struct device *dev)
 
 	dcss_bus_freq(dcss, true);
 
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	pm_qos_add_request(&dcss->pm_qos_req, PM_QOS_CPU_DMA_LATENCY, 0);
+#endif
 
 	dcss_clocks_enable(dcss, true);
 

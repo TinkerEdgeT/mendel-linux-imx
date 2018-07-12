@@ -1,7 +1,9 @@
 #ifndef __DCSS_PRV_H__
 #define __DCSS_PRV_H__
 
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 #include <linux/pm_qos.h>
+#endif
 
 #define SET 0x04
 #define CLR 0x08
@@ -60,7 +62,9 @@ struct dcss_soc {
 	bool bus_freq_req;
 	bool clks_on;
 
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	struct pm_qos_request pm_qos_req;
+#endif
 };
 
 /* BLKCTL */
