@@ -334,6 +334,7 @@ device_initcall(imx8_soc_init);
 #define OCOTP_CFG3_INDUSTRIAL		2
 #define OCOTP_CFG3_AUTO			3
 
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 static void __init imx8mq_opp_check_speed_grading(struct device *cpu_dev)
 {
 	struct device_node *np;
@@ -382,6 +383,7 @@ static void __init imx8mq_opp_check_speed_grading(struct device *cpu_dev)
 put_node:
 	of_node_put(np);
 }
+#endif
 
 static void __init imx8mq_opp_init(void)
 {
@@ -403,7 +405,7 @@ static void __init imx8mq_opp_init(void)
 		goto put_node;
 	}
 
-#if !defined(IMX8MQ_PHANBELL_POWERSAVE)
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	imx8mq_opp_check_speed_grading(cpu_dev);
 #endif
 
