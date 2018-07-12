@@ -403,7 +403,9 @@ static void __init imx8mq_opp_init(void)
 		goto put_node;
 	}
 
+#if !defined(IMX8MQ_PHANBELL_POWERSAVE)
 	imx8mq_opp_check_speed_grading(cpu_dev);
+#endif
 
 put_node:
 	of_node_put(np);
