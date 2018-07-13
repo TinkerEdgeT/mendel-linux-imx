@@ -35,18 +35,6 @@
 			gpio = <&gpio2 19 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 		};
-
-		reg_gpio_dvfs: regulator-gpio {
-			compatible = "regulator-gpio";
-			pinctrl-names = "default";
-			pinctrl-0 = <&pinctrl_dvfs>;
-			regulator-min-microvolt = <900000>;
-			regulator-max-microvolt = <1000000>;
-			regulator-name = "gpio_dvfs";
-			regulator-type = "voltage";
-			gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
-			states = <900000 0x1 1000000 0x0>;
-		};
 	};
 
 	modem_reset: modem-reset {
@@ -326,11 +314,10 @@
 			buck2_reg: regulator@1 {
 				reg = <1>;
 				regulator-compatible = "buck2";
-				regulator-min-microvolt = <700000>;
-				regulator-max-microvolt = <1300000>;
+				regulator-min-microvolt = <900000>;
+				regulator-max-microvolt = <1000000>;
 				regulator-boot-on;
 				regulator-always-on;
-				regulator-ramp-delay = <1250>;
 			};
 
 			buck3_reg: regulator@2 {
