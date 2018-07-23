@@ -64,6 +64,7 @@
 	clkreq-gpio = <&gpio5 20 GPIO_ACTIVE_LOW>;
 	disable-gpio = <&gpio3 11 GPIO_ACTIVE_LOW>;
 	reset-gpio = <&gpio3 10 GPIO_ACTIVE_LOW>;
+	fsl,max-link-speed = <1>;
 	status = "okay";
 };
 
