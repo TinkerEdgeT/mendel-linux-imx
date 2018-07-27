@@ -65,6 +65,7 @@
 	disable-gpio = <&gpio3 11 GPIO_ACTIVE_LOW>;
 	reset-gpio = <&gpio3 10 GPIO_ACTIVE_LOW>;
 	fsl,max-link-speed = <1>;
+	epdev_on-supply = <&apex_regulators>;
 	status = "okay";
 };
 
@@ -233,12 +234,18 @@
 &i2c1 {
 	status = "okay";
 
-	asic_pmic: isl91301@1f {
-	 compatible = "isl91301";
+	asic_pmic: apex_pmic@1f {
+	 compatible = "apex_pmic";
 	 reg = <0x1f>;
 	 status = "okay";
-	};
 
+	 regulators {
+	  apex_regulators: apex_pmic@0 {
+	   reg = <0>;
+	   regulator-compatible = "apex_regulators";
+	  };
+	 };
+	};
 };
 
 &i2c3 {
