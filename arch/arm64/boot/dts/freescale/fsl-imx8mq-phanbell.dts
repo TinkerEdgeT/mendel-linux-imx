@@ -65,7 +65,6 @@
 	disable-gpio = <&gpio3 11 GPIO_ACTIVE_LOW>;
 	reset-gpio = <&gpio3 10 GPIO_ACTIVE_LOW>;
 	fsl,max-link-speed = <1>;
-	epdev_on-supply = <&apex_regulators>;
 	status = "okay";
 };
 

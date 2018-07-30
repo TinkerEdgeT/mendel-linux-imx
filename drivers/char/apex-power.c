@@ -25,10 +25,12 @@
 #include <asm/cmpxchg.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
+#include <linux/delay.h>
 #include <linux/fs.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/pci.h>
+#include <linux/regulator/consumer.h>
 #include <linux/workqueue.h>
 
 #define APEX_PCI_VENDOR_ID 0x1ac1
@@ -41,10 +43,20 @@ static int apex_power_major;
 static bool apex_power_owned;
 static struct delayed_work apex_power_delayed_init;
 
+static struct regulator *get_apex_regulator(void) {
+	struct regulator *supply;
+	supply = regulator_get(NULL, "apex_regulators");
+	if (IS_ERR(supply)) {
+		printk(KERN_ERR "apex_power: Unable to find regulator.\n");
+	}
+	return supply;
+}
 static int apex_power_down(void)
 {
 	struct pci_dev *apex_dev = NULL;
 	struct pci_dev *apex_connected_bus = NULL;
+	struct regulator *supply;
+	int ret = 0;
 
 	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
 	if (!apex_dev) {
@@ -56,6 +68,12 @@ static int apex_power_down(void)
 
 	pci_stop_and_remove_bus_device_locked(apex_connected_bus);
 
+	supply = get_apex_regulator();
+	ret = regulator_disable(supply);
+	if (ret) {
+		printk(KERN_ERR "apex_power: Unable to disable regulator.\n");
+	}
+
 	return 0;
 }
 
@@ -63,6 +81,17 @@ static int apex_power_up(void)
 {
 	struct pci_bus *pci_bus = NULL;
 	struct pci_dev *apex_dev = NULL;
+	int ret = 0;
+	struct regulator *supply;
+
+	supply = get_apex_regulator();
+	ret = regulator_enable(supply);
+	if (ret) {
+		printk(KERN_ERR "apex_power: Unable to enable regulator.\n");
+	}
+
+	// Allot time for the PMIC to sequence and the Apex device to boot.
+	msleep(100);
 
 	pci_lock_rescan_remove();
 	while ((pci_bus = pci_find_next_bus(pci_bus)) != NULL) {
@@ -136,6 +165,15 @@ static int __init apex_power_init(void)
 	dev_t apex_power_dev;
 	int apex_power_major;
 	int ret = 0;
+	struct regulator *supply;
+	// Enable the supply in regulator framework to ensure power isn't removed
+	// until init is complete.
+
+	supply = get_apex_regulator();
+	ret = regulator_enable(supply);
+	if (ret) {
+		printk(KERN_ERR "apex_power: Unable to enable regulator.\n");
+	}
 
 	apex_power_class = class_create(THIS_MODULE, "apex_power");
 	if (IS_ERR(apex_power_class)) {
