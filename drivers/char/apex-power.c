@@ -29,6 +29,7 @@
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/pci.h>
+#include <linux/workqueue.h>
 
 #define APEX_PCI_VENDOR_ID 0x1ac1
 #define APEX_PCI_DEVICE_ID 0x089a
@@ -38,15 +39,12 @@ static struct device *apex_power_device;
 static struct cdev apex_power_cdev;
 static int apex_power_major;
 static bool apex_power_owned;
+static struct delayed_work apex_power_delayed_init;
 
-static int apex_power_release(struct inode* inode, struct file* filep)
+static int apex_power_down(void)
 {
 	struct pci_dev *apex_dev = NULL;
 	struct pci_dev *apex_connected_bus = NULL;
-
-	if (apex_power_owned != true) {
-		return -EPERM;
-	}
 
 	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
 	if (!apex_dev) {
@@ -58,25 +56,17 @@ static int apex_power_release(struct inode* inode, struct file* filep)
 
 	pci_stop_and_remove_bus_device_locked(apex_connected_bus);
 
-	apex_power_owned = false;
 	return 0;
 }
 
-static int apex_power_open(struct inode* inode, struct file* filep)
+static int apex_power_up(void)
 {
 	struct pci_bus *pci_bus = NULL;
 	struct pci_dev *apex_dev = NULL;
-	int result = 0;
-
-	if (apex_power_owned != false) {
-		return -EPERM;
-	}
-	apex_power_owned = true;
 
 	pci_lock_rescan_remove();
 	while ((pci_bus = pci_find_next_bus(pci_bus)) != NULL) {
-		result = pci_rescan_bus(pci_bus);
-		printk(KERN_INFO "apex_power_open: found %d child-busses.\n", result);
+		pci_rescan_bus(pci_bus);
 	}
 	pci_unlock_rescan_remove();
 
@@ -90,11 +80,56 @@ static int apex_power_open(struct inode* inode, struct file* filep)
 	return 0;
 }
 
+static int apex_power_release(struct inode* inode, struct file* filep)
+{
+	int ret = 0;
+
+	if (apex_power_owned != true) {
+		return -EPERM;
+	}
+
+	ret = apex_power_down();
+	apex_power_owned = false;
+	return ret;
+}
+
+static int apex_power_open(struct inode* inode, struct file* filep)
+{
+	if (apex_power_owned != false) {
+		return -EPERM;
+	}
+	apex_power_owned = true;
+
+	/* Ensure that we don't accidentally run afoul of the initial delayed
+	   power down. */
+	cancel_delayed_work_sync(&apex_power_delayed_init);
+
+	return apex_power_up();
+}
+
 static const struct file_operations apex_power_fops = {
 	.owner = THIS_MODULE,
 	.open = apex_power_open,
 	.release = apex_power_release,
 };
+
+static void apex_power_delayed_init_callback(struct work_struct *work)
+{
+	struct pci_dev *apex_dev = NULL;
+	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
+
+	if (!apex_dev) {
+		printk(KERN_INFO "apex_power: rescheduling late init power down\n");
+		schedule_delayed_work(&apex_power_delayed_init,
+				      msecs_to_jiffies(1000));
+		return;
+	}
+
+	pci_dev_put(apex_dev);
+
+	printk(KERN_INFO "apex_power: init routines powering down apex\n");
+	apex_power_down();
+}
 
 static int __init apex_power_init(void)
 {
@@ -129,11 +164,15 @@ static int __init apex_power_init(void)
 	apex_power_device = device_create(apex_power_class, NULL, apex_power_dev,
 					  NULL, "%s", "apex_power");
 	if (IS_ERR(apex_power_device)) {
-		printk(KERN_ERR "apex_power: device_Create failed.\n");
+		printk(KERN_ERR "apex_power: device_create failed.\n");
 		cdev_del(&apex_power_cdev);
 		unregister_chrdev_region(apex_power_dev, 1);
 		class_destroy(apex_power_class);
 	}
+
+	INIT_DELAYED_WORK(&apex_power_delayed_init,
+			  apex_power_delayed_init_callback);
+	schedule_delayed_work(&apex_power_delayed_init, msecs_to_jiffies(1000));
 
 	printk(KERN_INFO "apex_power: initialized.\n");
 
