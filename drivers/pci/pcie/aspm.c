@@ -45,7 +45,7 @@
 /*
  * When L1 substates are enabled, the LTR L1.2 threshold is a timing parameter
  * that decides whether L1.1 or L1.2 is entered (Refer PCIe spec for details).
- * Not sure is there is a way to "calculate" this on the fly, but maybe we
+ * Not sure if there is a way to "calculate" this on the fly, but maybe we
  * could turn it into a parameter in future.  This value has been taken from
  * the following files from Intel's coreboot (which is the only code I found
  * to have used this):
