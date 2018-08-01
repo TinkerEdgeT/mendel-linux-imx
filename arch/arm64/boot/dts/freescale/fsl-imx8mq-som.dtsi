@@ -274,23 +274,23 @@
 	pinctrl-0 = <&pinctrl_i2c1>;
 	status = "okay";
 
-	pmic: bd71837@4b {
+	pmic: bd71840@4b {
 		reg = <0x4b>;
-		compatible = "rohm,bd71837";
-		/* PMIC BD71837 PMIC_nINT GPIO1_IO12 */
+		compatible = "rohm,bd71840";
+		/* PMIC bd71840 PMIC_nINT GPIO1_IO12 */
 		pinctrl-0 = <&pinctrl_pmic>;
 		gpio_intr = <&gpio1 3 GPIO_ACTIVE_LOW>;
 
-		bd71837,pmic-buck1-uses-i2c-dvs;
-		bd71837,pmic-buck1-dvs-voltage = <900000>, <850000>, <800000>; /* VDD_SOC: Run-Idle-Suspend */
-		bd71837,pmic-buck2-uses-i2c-dvs;
-		bd71837,pmic-buck2-dvs-voltage = <900000>, <850000>, <0>; /* VDD_ARM: Run-Idle */
-		bd71837,pmic-buck3-uses-i2c-dvs;
-		bd71837,pmic-buck3-dvs-voltage = <850000>, <0>, <0>; /* VDD_GPU: Run */
-		bd71837,pmic-buck4-uses-i2c-dvs;
-		bd71837,pmic-buck4-dvs-voltage = <900000>, <0>, <0>; /* VDD_VPU: Run */
-		bd71837,pmic-buck5-uses-i2c-dvs;
-		bd71837,pmic-buck5-dvs-voltage = <900000>, <700000>, <0>; /* VDD_DRAM: Run-Idle */
+		bd71840,pmic-buck1-uses-i2c-dvs;
+		bd71840,pmic-buck1-dvs-voltage = <900000>, <850000>, <800000>; /* VDD_SOC: Run-Idle-Suspend */
+		bd71840,pmic-buck2-uses-i2c-dvs;
+		bd71840,pmic-buck2-dvs-voltage = <900000>, <850000>, <0>; /* VDD_ARM: Run-Idle */
+		bd71840,pmic-buck3-uses-i2c-dvs;
+		bd71840,pmic-buck3-dvs-voltage = <850000>, <0>, <0>; /* VDD_GPU: Run */
+		bd71840,pmic-buck4-uses-i2c-dvs;
+		bd71840,pmic-buck4-dvs-voltage = <900000>, <0>, <0>; /* VDD_VPU: Run */
+		bd71840,pmic-buck5-uses-i2c-dvs;
+		bd71840,pmic-buck5-dvs-voltage = <900000>, <700000>, <0>; /* VDD_DRAM: Run-Idle */
 
 
 		gpo {
