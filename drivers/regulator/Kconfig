@@ -903,13 +903,6 @@ config REGULATOR_BD71837
     help
       This driver supports BD71837 voltage regulator chips.
 
-config REGULATOR_BD71840
-    tristate "RoHM BD71840 Power Regulator"
-    depends on MFD_BD71840
-    help
-      This driver supports BD71840 voltage regulator chips.
-
-
 config REGULATOR_APEX_PMIC
 	tristate "Google Apex PMIC regulator driver"
 	depends on I2C
