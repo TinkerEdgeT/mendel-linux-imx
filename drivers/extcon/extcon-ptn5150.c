@@ -26,6 +26,12 @@
 #include <linux/extcon.h>
 #include <linux/gpio/consumer.h>
 
+/* PTN_REG_CONTROL */
+#define CONTROL_PORT_STATE_MASK (3 << 1)
+#define CONTROL_PORT_STATE_UFP (0 << 1)
+#define CONTROL_PORT_STATE_DFP (1 << 1)
+#define CONTROL_PORT_STATE_DRP (2 << 1)
+#define CONTROL_PORT_INT_MASK (1 << 0)
 /* PTN5150_REG_INT_STATUS */
 #define CABLE_ATTACHED		(1 << 0)
 #define CABLE_DETACHED		(1 << 1)
@@ -35,6 +41,13 @@
 #define IS_NOT_CONNECTED(val)	(((val) & 0x1c) == 0x0)
 /* PTN5150_REG_CON_DET */
 #define DISABLE_CON_DET		(1 << 0)
+/* PTN5150_REG_INT_MASK */
+#define MASK_COMP_CHANGE (1 << 4)
+#define MASK_ROLE_CHANGE (1 << 3)
+#define MASK_ORIENT_FOUND (1 << 2)
+#define MASK_DEBUG_FOUND (1 << 1)
+#define MASK_AUDIO_FOUND (1 << 0)
+
 
 struct ptn5150_info {
 	struct device *dev;
@@ -75,11 +88,29 @@ enum ptn5150_reg {
 
 	PTN5150_REG_END,
 };
+
 static const struct regmap_config ptn5150_regmap_config = {
 	.reg_bits	= 8,
 	.val_bits	= 8,
 	.max_register	= PTN5150_REG_END,
+	.cache_type = REGCACHE_NONE,
 };
+
+static irqreturn_t ptn5150_i2c_irq_handler(int irq, void *dev_id) {
+	int ret;
+	unsigned int val = 0;
+	struct ptn5150_info *info = dev_id;
+
+	ret = regmap_read(info->regmap, PTN5150_REG_INT_REG_STATUS, &val);
+	if (ret) {
+		dev_err(info->dev, "Failed to read interrupt status: %d", ret);
+		return IRQ_NONE;
+	}
+
+	queue_work(system_power_efficient_wq, &info->wq_detect_cable);
+
+	return IRQ_HANDLED;
+}
 
 static void ptn5150_detect_cable(struct work_struct *work)
 {
@@ -89,8 +120,9 @@ static void ptn5150_detect_cable(struct work_struct *work)
 	unsigned int val;
 
 	ret = regmap_read(info->regmap, PTN5150_REG_CC_STATUS, &val);
-	if (ret)
+	if (ret) {
 		dev_err(info->dev, "failed to get CC status:%d\n", ret);
+	}
 
 	if (IS_UFP_ATTATCHED(val)) {
 		extcon_set_state_sync(info->edev, EXTCON_USB, false);
@@ -114,10 +146,11 @@ static int ptn5150_clear_interrupt(struct ptn5150_info *info)
 	int ret;
 
 	ret = regmap_read(info->regmap, PTN5150_REG_INT_STATUS, &val);
-	if (ret)
+	if (ret) {
 		dev_err(info->dev,
 			"failed to clear interrupt status:%d\n",
 			ret);
+	}
 
 	return (ret < 0) ? ret : (int)val;
 }
@@ -126,10 +159,92 @@ static irqreturn_t ptn5150_connect_irq_handler(int irq, void *dev_id)
 {
 	struct ptn5150_info *info = dev_id;
 
-	if (ptn5150_clear_interrupt(info) > 0)
+	if (ptn5150_clear_interrupt(info) > 0) {
 		queue_work(system_power_efficient_wq, &info->wq_detect_cable);
+	}
 
 	return IRQ_HANDLED;
+}
+
+static int ptn5150_setup_con_det(struct ptn5150_info *info, struct gpio_desc *connect_gpiod) {
+	int ret, connect_irq, gpio_val, count = 1000;
+
+	connect_irq = gpiod_to_irq(connect_gpiod);
+	if (connect_irq < 0) {
+		dev_err(info->dev, "failed to get connect IRQ\n");
+		return connect_irq;
+	}
+
+	/* Clear the pending interrupts */
+	ret = ptn5150_clear_interrupt(info);
+	if (ret < 0) {
+		return ret;
+	}
+
+	gpio_val = gpiod_get_value(connect_gpiod);
+	/* Delay until the GPIO goes to high if it is low before */
+	while (gpio_val == 0 && count >= 0) {
+		gpio_val = gpiod_get_value(connect_gpiod);
+		usleep_range(10, 20);
+		count--;
+	}
+
+	if (count < 0) {
+		dev_err(info->dev, "timeout for waiting gpio becoming high\n");
+	}
+
+	ret = regmap_update_bits(info->regmap, PTN5150_REG_CON_DET,
+			DISABLE_CON_DET, ~DISABLE_CON_DET);
+	if (ret) {
+		dev_err(info->dev,
+			"failed to enable CON_DET output on pin 5:%d\n",
+			ret);
+		return ret;
+	}
+
+	ret = devm_request_threaded_irq(info->dev, connect_irq, NULL,
+					ptn5150_connect_irq_handler,
+					IRQF_TRIGGER_LOW | IRQF_ONESHOT,
+					dev_name(info->dev), info);
+	if (ret < 0) {
+		dev_err(info->dev, "failed to request connect IRQ\n");
+		return ret;
+	}
+
+	return 0;
+}
+
+static int ptn5150_setup_i2c_det(struct ptn5150_info *info, struct i2c_client *i2c) {
+	int ret;
+
+	ret = regmap_update_bits(info->regmap, PTN5150_REG_INT_MASK,
+		(MASK_ROLE_CHANGE | MASK_COMP_CHANGE | MASK_ORIENT_FOUND),
+		~(MASK_ROLE_CHANGE | MASK_COMP_CHANGE | MASK_ORIENT_FOUND)
+	);
+	if (ret) {
+		dev_err(info->dev,
+		"Failed to set I2C interrupt masks: %d", ret);
+		return ret;
+	}
+
+	ret = regmap_update_bits(info->regmap, PTN5150_REG_CONTROL,
+		CONTROL_PORT_STATE_MASK | CONTROL_PORT_INT_MASK,
+		CONTROL_PORT_STATE_UFP | CONTROL_PORT_INT_MASK);
+	if (ret) {
+		dev_err(info->dev,
+		"Failed to set port mode: %d", ret);
+		return ret;
+	}
+
+	ret = devm_request_threaded_irq(info->dev, i2c->irq, NULL,
+		ptn5150_i2c_irq_handler, IRQF_ONESHOT | IRQF_TRIGGER_LOW,
+		dev_name(info->dev), info);
+	if (ret < 0) {
+		dev_err(info->dev, "Failed to register i2c interrupt: %d", ret);
+		return ret;
+	}
+
+	return 0;
 }
 
 static int ptn5150_i2c_probe(struct i2c_client *i2c,
@@ -137,16 +252,18 @@ static int ptn5150_i2c_probe(struct i2c_client *i2c,
 {
 	struct device_node *np = i2c->dev.of_node;
 	struct ptn5150_info *info;
-	int ret, connect_irq, gpio_val, count = 1000;
+	int ret;
 	unsigned int dev_id;
 	struct gpio_desc *connect_gpiod;
 
-	if (!np)
+	if (!np) {
 		return -EINVAL;
+	}
 
 	info = devm_kzalloc(&i2c->dev, sizeof(*info), GFP_KERNEL);
-	if (!info)
+	if (!info) {
 		return -ENOMEM;
+	}
 
 	i2c_set_clientdata(i2c, info);
 	info->dev = &i2c->dev;
@@ -157,6 +274,9 @@ static int ptn5150_i2c_probe(struct i2c_client *i2c,
 				   ret);
 		return ret;
 	}
+
+	ret = regmap_update_bits(info->regmap, PTN5150_REG_RESET, 1, 1);
+	usleep_range(500, 500);
 
 	/* Allocate extcon device */
 	info->edev = devm_extcon_dev_allocate(info->dev, ptn5150_extcon_cable);
@@ -172,33 +292,16 @@ static int ptn5150_i2c_probe(struct i2c_client *i2c,
 		return ret;
 	}
 
+	INIT_WORK(&info->wq_detect_cable, ptn5150_detect_cable);
+
 	connect_gpiod = devm_gpiod_get(info->dev, "connect", GPIOD_IN);
-	if (IS_ERR(connect_gpiod)) {
-		dev_err(info->dev, "failed to get connect GPIO\n");
-		return PTR_ERR(connect_gpiod);
+	if (!IS_ERR(connect_gpiod)) {
+		ret = ptn5150_setup_con_det(info, connect_gpiod);
+		if (ret) {
+		  dev_err(info->dev, "Failed to setup connection detection feature\n");
+		  return ret;
+		}
 	}
-
-	connect_irq = gpiod_to_irq(connect_gpiod);
-	if (connect_irq < 0) {
-		dev_err(info->dev, "failed to get connect IRQ\n");
-		return connect_irq;
-	}
-
-	/* Clear the pending interrupts */
-	ret = ptn5150_clear_interrupt(info);
-	if (ret < 0)
-		return ret;
-
-	gpio_val = gpiod_get_value(connect_gpiod);
-	/* Delay until the GPIO goes to high if it is low before */
-	while (gpio_val == 0 && count >= 0) {
-		gpio_val = gpiod_get_value(connect_gpiod);
-		usleep_range(10, 20);
-		count--;
-	}
-
-	if (count < 0)
-		dev_err(info->dev, "timeout for waiting gpio becoming high\n");
 
 	ret = regmap_read(info->regmap, PTN5150_REG_DEVICE_ID, &dev_id);
 	if (ret) {
@@ -209,25 +312,21 @@ static int ptn5150_i2c_probe(struct i2c_client *i2c,
 	dev_dbg(info->dev, "NXP PTN5150: Version ID:0x%x, Vendor ID:0x%x\n",
 			(dev_id >> 3), (dev_id & 0x3));
 
-	ret = regmap_update_bits(info->regmap, PTN5150_REG_CON_DET,
-			DISABLE_CON_DET, ~DISABLE_CON_DET);
-	if (ret) {
-		dev_err(info->dev,
-			"failed to enable CON_DET output on pin 5:%d\n",
-			ret);
-		return ret;
+	if (i2c->irq) {
+		ret = ptn5150_setup_i2c_det(info, i2c);
+		if (ret) {
+			dev_err(info->dev, "Failed to configure i2c interrupts: %d", ret);
+			return ret;
+		}
 	}
 
-	INIT_WORK(&info->wq_detect_cable, ptn5150_detect_cable);
-
-	ret = devm_request_threaded_irq(info->dev, connect_irq, NULL,
-					ptn5150_connect_irq_handler,
-					IRQF_TRIGGER_LOW | IRQF_ONESHOT,
-					dev_name(info->dev), info);
+	ret = ptn5150_clear_interrupt(info);
 	if (ret < 0) {
-		dev_err(info->dev, "failed to request connect IRQ\n");
+		dev_err(info->dev, "Failed to clear interrupt: %d", ret);
 		return ret;
 	}
+
+	device_set_wakeup_capable(info->dev, true);
 
 	/* Do cable detect now */
 	ptn5150_detect_cable(&info->wq_detect_cable);
