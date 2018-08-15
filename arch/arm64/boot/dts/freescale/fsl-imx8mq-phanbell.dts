@@ -311,6 +311,7 @@
 		rst-gpios = <&gpio1 12 0>;
 		mclk = <20000000>;
 		mclk_source = <0>;
+		ae_target = <52>;
 		port {
 			ov5645_mipi1_ep: endpoint {
 				remote-endpoint = <&mipi1_sensor_ep>;
