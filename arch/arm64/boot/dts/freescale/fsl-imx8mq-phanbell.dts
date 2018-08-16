@@ -127,6 +127,12 @@
 	status = "okay";
 };
 
+&pwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm2>;
+	status = "okay";
+};
+
 &pwm3 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm3>;
@@ -186,6 +192,13 @@
 				MX8MQ_IOMUXC_GPIO1_IO01_PWM1_OUT		0x7f
 			>;
 		};
+
+		pinctrl_pwm2: pwm2 {
+			fsl,pins = <
+				MX8MQ_IOMUXC_GPIO1_IO13_PWM2_OUT		0x7f
+			>;
+		};
+
 		pinctrl_pwm3: pwm3 {
 			fsl,pins = <
 				MX8MQ_IOMUXC_GPIO1_IO14_PWM3_OUT		0x7f
