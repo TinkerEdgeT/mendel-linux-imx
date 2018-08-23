@@ -33,6 +33,10 @@
 #include <linux/regulator/consumer.h>
 #include <linux/workqueue.h>
 
+#if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
+#include <linux/busfreq-imx.h>
+#endif
+
 #define APEX_PCI_VENDOR_ID 0x1ac1
 #define APEX_PCI_DEVICE_ID 0x089a
 
@@ -57,6 +61,10 @@ static int apex_power_down(void)
 	struct pci_dev *apex_connected_bus = NULL;
 	struct regulator *supply;
 	int ret = 0;
+
+#if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
+	release_bus_freq(BUS_FREQ_HIGH);
+#endif
 
 	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
 	if (!apex_dev) {
@@ -93,6 +101,10 @@ static int apex_power_up(void)
 	// Allot time for the PMIC to sequence and the Apex device to boot.
 	msleep(100);
 
+#if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
+	request_bus_freq(BUS_FREQ_HIGH);
+#endif
+
 	pci_lock_rescan_remove();
 	while ((pci_bus = pci_find_next_bus(pci_bus)) != NULL) {
 		pci_rescan_bus(pci_bus);
@@ -102,6 +114,11 @@ static int apex_power_up(void)
 	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
 	if (!apex_dev) {
 		printk(KERN_ERR "apex_power: can't find Apex on PCI bus?!\n");
+
+#if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
+		release_bus_freq(BUS_FREQ_HIGH);
+#endif
+
 		return -EIO;
 	}
 	pci_dev_put(apex_dev);
