@@ -63,7 +63,9 @@ static int apex_power_down(void)
 	int ret = 0;
 
 #if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
-	release_bus_freq(BUS_FREQ_HIGH);
+	if (apex_power_owned) {
+		release_bus_freq(BUS_FREQ_HIGH);
+	}
 #endif
 
 	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
