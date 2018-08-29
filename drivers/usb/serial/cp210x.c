@@ -31,6 +31,8 @@
  */
 static int cp210x_open(struct tty_struct *tty, struct usb_serial_port *);
 static void cp210x_close(struct usb_serial_port *);
+static int cp210x_ioctl(struct tty_struct *tty,
+	unsigned int cmd, unsigned long arg);
 static void cp210x_get_termios(struct tty_struct *, struct usb_serial_port *);
 static void cp210x_get_termios_port(struct usb_serial_port *port,
 	unsigned int *cflagp, unsigned int *baudp);
@@ -214,6 +216,7 @@ static const struct usb_device_id id_table[] = {
 MODULE_DEVICE_TABLE(usb, id_table);
 
 struct cp210x_port_private {
+	__u8			bPartNumber;
 	__u8			bInterfaceNumber;
 	bool			has_swapped_line_ctl;
 };
@@ -229,6 +232,7 @@ static struct usb_serial_driver cp210x_device = {
 	.bulk_out_size		= 256,
 	.open			= cp210x_open,
 	.close			= cp210x_close,
+	.ioctl			= cp210x_ioctl,
 	.break_ctl		= cp210x_break_ctl,
 	.set_termios		= cp210x_set_termios,
 	.tx_empty		= cp210x_tx_empty,
@@ -238,6 +242,10 @@ static struct usb_serial_driver cp210x_device = {
 	.port_remove		= cp210x_port_remove,
 	.dtr_rts		= cp210x_dtr_rts
 };
+
+/* IOCTLs */
+#define IOCTL_GPIOGET		0x8000
+#define IOCTL_GPIOSET		0x8001
 
 static struct usb_serial_driver * const serial_drivers[] = {
 	&cp210x_device, NULL
@@ -276,6 +284,7 @@ static struct usb_serial_driver * const serial_drivers[] = {
 #define CP210X_SET_CHARS	0x19
 #define CP210X_GET_BAUDRATE	0x1D
 #define CP210X_SET_BAUDRATE	0x1E
+#define CP210X_VENDOR_SPECIFIC	0xFF
 
 /* CP210X_IFC_ENABLE */
 #define UART_ENABLE		0x0001
@@ -317,6 +326,22 @@ static struct usb_serial_driver * const serial_drivers[] = {
 #define CONTROL_DCD		0x0080
 #define CONTROL_WRITE_DTR	0x0100
 #define CONTROL_WRITE_RTS	0x0200
+
+/* CP210X_VENDOR_SPECIFIC sub-commands passed in wValue */
+#define CP210X_WRITE_LATCH	0x37E1
+#define CP210X_READ_LATCH	0x00C2
+#define CP210X_GET_PARTNUM	0x370B
+
+/* CP210X_GET_PARTNUM returns one of these */
+#define CP2101_PARTNUM		0x01
+#define CP2102_PARTNUM		0x02
+#define CP2103_PARTNUM		0x03
+#define CP2104_PARTNUM		0x04
+#define CP2105_PARTNUM		0x05
+#define CP2108_PARTNUM		0x08
+#define CP210x_PARTNUM_CP2102N_QFN28	0x20
+#define CP210x_PARTNUM_CP2102N_QFN24	0x21
+#define CP210x_PARTNUM_CP2102N_QFN20	0x22
 
 /* CP210X_GET_COMM_STATUS returns these 0x13 bytes */
 struct cp210x_comm_status {
@@ -502,9 +527,11 @@ static int cp210x_write_reg_block(struct usb_serial_port *port, u8 req,
 	void *dmabuf;
 	int result;
 
-	dmabuf = kmemdup(buf, bufsize, GFP_KERNEL);
+	dmabuf = kmalloc(bufsize, GFP_KERNEL);
 	if (!dmabuf)
 		return -ENOMEM;
+
+	memcpy(dmabuf, buf, bufsize);
 
 	result = usb_control_msg(serial->dev, usb_sndctrlpipe(serial->dev, 0),
 			req, REQTYPE_HOST_TO_INTERFACE, 0,
@@ -660,6 +687,219 @@ static void cp210x_close(struct usb_serial_port *port)
 	cp210x_write_u16_reg(port, CP210X_PURGE, PURGE_ALL);
 
 	cp210x_write_u16_reg(port, CP210X_IFC_ENABLE, UART_DISABLE);
+}
+
+/*
+ * Reads a variable-sized vendor-specific register identified by wValue
+ * Returns data into buf in native USB byte order.
+ */
+static int cp210x_read_vs_reg_block(struct usb_serial_port *port, u8 bmRequestType,
+		u16 wValue, void *buf, int bufsize)
+{
+	struct usb_serial *serial = port->serial;
+	struct cp210x_port_private *port_priv = usb_get_serial_port_data(port);
+	void *dmabuf;
+	int result;
+
+	dmabuf = kmalloc(bufsize, GFP_KERNEL);
+	if (!dmabuf)
+		return -ENOMEM;
+
+	result = usb_control_msg(serial->dev, usb_rcvctrlpipe(serial->dev, 0),
+			CP210X_VENDOR_SPECIFIC, bmRequestType, wValue,
+			port_priv->bInterfaceNumber, dmabuf, bufsize,
+			USB_CTRL_SET_TIMEOUT);
+	if (result == bufsize) {
+		memcpy(buf, dmabuf, bufsize);
+		result = 0;
+	} else {
+		dev_err(&port->dev, "failed get VENDOR_SPECIFIC wValue 0x%x size %d status: %d\n",
+				wValue, bufsize, result);
+		if (result >= 0)
+			result = -EPROTO;
+	}
+
+	kfree(dmabuf);
+
+	return result;
+}
+
+/* GPIO register read from single-interface CP210x */
+static int cp210x_read_device_gpio_u8(struct usb_serial_port *port, u8 *val)
+{
+	return cp210x_read_vs_reg_block(port, REQTYPE_DEVICE_TO_HOST, CP210X_READ_LATCH, val, 1);
+}
+
+/* GPIO register read from CP2105 */
+static int cp210x_read_interface_gpio_u8(struct usb_serial_port *port, u8 *val)
+{
+	return cp210x_read_vs_reg_block(port, REQTYPE_INTERFACE_TO_HOST, CP210X_READ_LATCH, val, 1);
+}
+
+/* GPIO register read from CP2108 */
+static int cp210x_read_device_gpio_u16(struct usb_serial_port *port, u16 *val)
+{
+	__le16 le16_val;
+	int err = cp210x_read_vs_reg_block(port, REQTYPE_DEVICE_TO_HOST, CP210X_READ_LATCH, &le16_val, 2);
+	if (err)
+		return err;
+
+	*val = le16_to_cpu(le16_val);
+	return 0;
+}
+
+/* GPIO register write to single-interface CP210x */
+static int cp210x_write_device_gpio_u16(struct usb_serial_port *port, u16 val)
+{
+	int result;
+
+	result = usb_control_msg(port->serial->dev,
+			usb_sndctrlpipe(port->serial->dev, 0),
+			CP210X_VENDOR_SPECIFIC,
+			REQTYPE_HOST_TO_DEVICE,
+			CP210X_WRITE_LATCH, /* wValue */
+			val, /* wIndex */
+			NULL, 0, USB_CTRL_SET_TIMEOUT);
+	if (result != 0) {
+		dev_err(&port->dev, "failed set WRITE_LATCH status: %d\n",
+				result);
+		if (result >= 0)
+			result = -EPROTO;
+	}
+	return result;
+}
+
+/*
+ * Writes a variable-sized block of CP210X_ registers, identified by req.
+ * Data in buf must be in native USB byte order.
+ */
+static int cp210x_write_gpio_reg_block(struct usb_serial_port *port,
+		u8 bmRequestType, void *buf, int bufsize)
+{
+	struct usb_serial *serial = port->serial;
+	struct cp210x_port_private *port_priv = usb_get_serial_port_data(port);
+	void *dmabuf;
+	int result;
+
+	dmabuf = kmalloc(bufsize, GFP_KERNEL);
+	if (!dmabuf)
+		return -ENOMEM;
+
+	memcpy(dmabuf, buf, bufsize);
+
+	result = usb_control_msg(serial->dev, usb_sndctrlpipe(serial->dev, 0),
+			CP210X_VENDOR_SPECIFIC, bmRequestType,
+			CP210X_WRITE_LATCH,  /* wValue */
+			port_priv->bInterfaceNumber, /* wIndex */
+			dmabuf, bufsize,
+			USB_CTRL_SET_TIMEOUT);
+
+	kfree(dmabuf);
+
+	if (result == bufsize) {
+		result = 0;
+	} else {
+		dev_err(&port->dev, "failed set WRITE_LATCH size %d status: %d\n",
+				bufsize, result);
+		if (result >= 0)
+			result = -EPROTO;
+	}
+
+	return result;
+}
+
+/* GPIO register write to CP2105 */
+static int cp210x_write_interface_gpio_u16(struct usb_serial_port *port, u16 val)
+{
+	__le16 le16_val = cpu_to_le16(val);
+
+	return cp210x_write_gpio_reg_block(port, REQTYPE_HOST_TO_INTERFACE, &le16_val, 2);
+}
+
+/* GPIO register write to CP2108 */
+static int cp210x_write_device_gpio_u32(struct usb_serial_port *port, u32 val)
+{
+	__le32 le32_val = cpu_to_le32(val);
+
+	return cp210x_write_gpio_reg_block(port, REQTYPE_HOST_TO_DEVICE, &le32_val, 4);
+}
+
+static int cp210x_ioctl(struct tty_struct *tty,
+	unsigned int cmd, unsigned long arg)
+{
+	struct usb_serial_port *port = tty->driver_data;
+	struct cp210x_port_private *port_priv = usb_get_serial_port_data(port);
+
+	switch (cmd) {
+	case IOCTL_GPIOGET:
+		if ((port_priv->bPartNumber == CP2103_PARTNUM) ||
+			(port_priv->bPartNumber == CP2104_PARTNUM) ||
+			(port_priv->bPartNumber == CP210x_PARTNUM_CP2102N_QFN28) ||
+			(port_priv->bPartNumber == CP210x_PARTNUM_CP2102N_QFN24) ||
+			(port_priv->bPartNumber == CP210x_PARTNUM_CP2102N_QFN20)) {
+			u8 gpio;
+			int err = cp210x_read_device_gpio_u8(port, &gpio);
+			if (err)
+				return err;
+			if (copy_to_user((void*)arg, &gpio, sizeof(gpio)))
+				return -EFAULT;
+			return 0;
+		}
+		else if (port_priv->bPartNumber == CP2105_PARTNUM) {
+			u8 gpio;
+			int err = cp210x_read_interface_gpio_u8(port, &gpio);
+			if (err)
+				return err;
+			if (copy_to_user((void*)arg, &gpio, sizeof(gpio)))
+				return -EFAULT;
+			return 0;
+		}
+		else if (port_priv->bPartNumber == CP2108_PARTNUM) {
+			u16 gpio;
+			int err = cp210x_read_device_gpio_u16(port, &gpio);
+			if (err)
+				return err;
+			if (copy_to_user((void*)arg, &gpio, sizeof(gpio)))
+				return -EFAULT;
+			return 0;
+		}
+		else {
+			return -ENOTSUPP;
+		}
+		break;
+	case IOCTL_GPIOSET:
+		if ((port_priv->bPartNumber == CP2103_PARTNUM) ||
+			(port_priv->bPartNumber == CP2104_PARTNUM) ||
+			(port_priv->bPartNumber == CP210x_PARTNUM_CP2102N_QFN28) ||
+			(port_priv->bPartNumber == CP210x_PARTNUM_CP2102N_QFN24) ||
+			(port_priv->bPartNumber == CP210x_PARTNUM_CP2102N_QFN20)) {
+			u16 gpio;
+			if (copy_from_user(&gpio, (void*)arg, sizeof(gpio)))
+				return -EFAULT;
+			return cp210x_write_device_gpio_u16(port, gpio);
+		}
+		else if (port_priv->bPartNumber == CP2105_PARTNUM) {
+			u16 gpio;
+			if (copy_from_user(&gpio, (void*)arg, sizeof(gpio)))
+				return -EFAULT;
+			return cp210x_write_interface_gpio_u16(port, gpio);
+		}
+		else if (port_priv->bPartNumber == CP2108_PARTNUM) {
+			u32 gpio;
+			if (copy_from_user(&gpio, (void*)arg, sizeof(gpio)))
+				return -EFAULT;
+			return cp210x_write_device_gpio_u32(port, gpio);
+		}
+		else {
+			return -ENOTSUPP;
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return -ENOIOCTLCMD;
 }
 
 /*
@@ -1082,9 +1322,7 @@ static int cp210x_tiocmget(struct tty_struct *tty)
 	u8 control;
 	int result;
 
-	result = cp210x_read_u8_reg(port, CP210X_GET_MDMSTS, &control);
-	if (result)
-		return result;
+	cp210x_read_u8_reg(port, CP210X_GET_MDMSTS, &control);
 
 	result = ((control & CONTROL_DTR) ? TIOCM_DTR : 0)
 		|((control & CONTROL_RTS) ? TIOCM_RTS : 0)
@@ -1127,6 +1365,13 @@ static int cp210x_port_probe(struct usb_serial_port *port)
 	port_priv->bInterfaceNumber = cur_altsetting->desc.bInterfaceNumber;
 
 	usb_set_serial_port_data(port, port_priv);
+
+	ret = cp210x_read_vs_reg_block(port, REQTYPE_DEVICE_TO_HOST,
+			CP210X_GET_PARTNUM, &port_priv->bPartNumber, 1);
+	if (ret) {
+		kfree(port_priv);
+		return ret;
+	}
 
 	ret = cp210x_detect_swapped_line_ctl(port);
 	if (ret) {
