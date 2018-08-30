@@ -256,6 +256,7 @@
 	  apex_regulators: apex_pmic@0 {
 	   reg = <0>;
 	   regulator-compatible = "apex_regulators";
+	   regulator-always-on;
 	  };
 	 };
 	};
