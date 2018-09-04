@@ -9,8 +9,8 @@
  * Copyright (C) 2018 Google, Inc.
  */
 
-#ifndef __GASKET_ADDR_TRNSL_H__
-#define __GASKET_ADDR_TRNSL_H__
+#ifndef __GASKET_PAGE_TABLE_H__
+#define __GASKET_PAGE_TABLE_H__
 
 #include <linux/pci.h>
 #include <linux/types.h>
@@ -37,7 +37,6 @@ struct gasket_page_table;
  *                 translation table.
  * @device: Device structure for the underlying device. Only used for logging.
  * @pci_dev: PCI system descriptor for the underlying device.
- * @bool has_dma_ops: Whether the page table uses arch specific dma_ops or
  * whether the driver will supply its own.
  *
  * Description: Allocates and initializes data to track address translation -
@@ -47,11 +46,10 @@ struct gasket_page_table;
  *
  * Returns 0 on success, a negative error code otherwise.
  */
-int gasket_page_table_init(
-	struct gasket_page_table **ppg_tbl,
-	const struct gasket_bar_data *bar_data,
-	const struct gasket_page_table_config *page_table_config,
-	struct device *device, struct pci_dev *pci_dev, bool dma_ops);
+int gasket_page_table_init(struct gasket_page_table **ppg_tbl,
+			   const struct gasket_bar_data *bar_data,
+			   const struct gasket_page_table_config *page_table_config,
+			   struct device *device, struct pci_dev *pci_dev);
 
 /*
  * Deallocate and cleanup page table data.
@@ -78,8 +76,8 @@ void gasket_page_table_cleanup(struct gasket_page_table *page_table);
  *              Returns 0 if successful, or non-zero if the page table entries
  *              are not free.
  */
-int gasket_page_table_partition(
-	struct gasket_page_table *page_table, uint num_simple_entries);
+int gasket_page_table_partition(struct gasket_page_table *page_table,
+				uint num_simple_entries);
 
 /*
  * Get and map [host] user space pages into device memory.
@@ -107,8 +105,8 @@ int gasket_page_table_map(struct gasket_page_table *page_table, ulong host_addr,
  *
  * Description: The inverse of gasket_map_pages. Unmaps pages from the device.
  */
-void gasket_page_table_unmap(
-	struct gasket_page_table *page_table, ulong dev_addr, uint num_pages);
+void gasket_page_table_unmap(struct gasket_page_table *page_table,
+			     ulong dev_addr, uint num_pages);
 
 /*
  * Unmap ALL host pages from device memory.
@@ -147,9 +145,9 @@ void gasket_page_table_garbage_collect(struct gasket_page_table *page_table);
  *              Returns 0 if successful, -1 for an error.  The page pointer
  *              and offset are returned through the pointers, if successful.
  */
-int gasket_page_table_lookup_page(
-	struct gasket_page_table *page_table, ulong dev_addr,
-	struct page **page, ulong *poffset);
+int gasket_page_table_lookup_page(struct gasket_page_table *page_table,
+				  ulong dev_addr, struct page **page,
+				  ulong *poffset);
 
 /*
  * Checks validity for input addrs and size.
@@ -162,11 +160,11 @@ int gasket_page_table_lookup_page(
  * specified by both addresses and the size are valid for mapping pages into
  * device memory.
  *
- * Returns 1 if true - if the mapping is bad, 0 otherwise.
+ * Returns true if the mapping is bad, false otherwise.
  */
-int gasket_page_table_are_addrs_bad(
-	struct gasket_page_table *page_table, ulong host_addr, ulong dev_addr,
-	ulong bytes);
+bool gasket_page_table_are_addrs_bad(struct gasket_page_table *page_table,
+				     ulong host_addr, ulong dev_addr,
+				     ulong bytes);
 
 /*
  * Checks validity for input dev addr and size.
@@ -178,10 +176,10 @@ int gasket_page_table_are_addrs_bad(
  * specified by the device address and the size is valid for mapping pages into
  * device memory.
  *
- * Returns 1 if true - if the address is bad, 0 otherwise.
+ * Returns true if the address is bad, false otherwise.
  */
-int gasket_page_table_is_dev_addr_bad(
-	struct gasket_page_table *page_table, ulong dev_addr, ulong bytes);
+bool gasket_page_table_is_dev_addr_bad(struct gasket_page_table *page_table,
+				       ulong dev_addr, ulong bytes);
 
 /*
  * Gets maximum size for the given page table.
@@ -248,4 +246,4 @@ void gasket_free_coherent_memory_all(struct gasket_dev *gasket_dev,
 int gasket_set_user_virt(struct gasket_dev *gasket_dev, uint64_t size,
 			 dma_addr_t dma_address, ulong vma);
 
-#endif
+#endif  /* __GASKET_PAGE_TABLE_H__ */

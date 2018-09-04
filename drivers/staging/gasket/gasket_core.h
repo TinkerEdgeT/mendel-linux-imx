@@ -50,11 +50,10 @@ enum gasket_interrupt_packing {
 /* Type of the interrupt supported by the device. */
 enum gasket_interrupt_type {
 	PCI_MSIX = 0,
-	PCI_MSI = 1,
-	PLATFORM_WIRE = 2,
 };
 
-/* Used to describe a Gasket interrupt. Contains an interrupt index, a register,
+/*
+ * Used to describe a Gasket interrupt. Contains an interrupt index, a register,
  * and packing data for that interrupt. The register and packing data
  * fields are relevant only for PCI_MSIX interrupt type and can be
  * set to 0 for everything else.
@@ -66,12 +65,6 @@ struct gasket_interrupt_desc {
 	u64 reg;
 	/* The location of this interrupt inside register reg, if packed. */
 	int packing;
-};
-
-/* Offsets to the wire interrupt handling registers */
-struct gasket_wire_interrupt_offsets {
-	u64 pending_bit_array;
-	u64 mask_array;
 };
 
 /*
@@ -262,6 +255,9 @@ struct gasket_dev {
 	/* Pointer to the internal driver description for this device. */
 	struct gasket_internal_desc *internal_desc;
 
+	/* Device info */
+	struct device *dev;
+
 	/* PCI subsystem metadata. */
 	struct pci_dev *pci_dev;
 
@@ -298,12 +294,6 @@ struct gasket_dev {
 	/* Hardware revision value for this device. */
 	int hardware_revision;
 
-	/*
-	 * Device-specific data; allocated in gasket_driver_desc.add_dev_cb()
-	 * and freed in gasket_driver_desc.remove_dev_cb().
-	 */
-	void *cb_data;
-
 	/* Protects access to per-device data (i.e. this structure). */
 	struct mutex mutex;
 
@@ -313,9 +303,12 @@ struct gasket_dev {
 	struct hlist_node legacy_hlist_node;
 };
 
+/* Type of the ioctl handler callback. */
+typedef long (*gasket_ioctl_handler_cb_t)(struct file *file, uint cmd,
+					  void __user *argp);
 /* Type of the ioctl permissions check callback. See below. */
-typedef int (*gasket_ioctl_permissions_cb_t)(
-	struct file *filp, uint cmd, ulong arg);
+typedef int (*gasket_ioctl_permissions_cb_t)(struct file *filp, uint cmd,
+					     void __user *argp);
 
 /*
  * Device type descriptor.
@@ -383,9 +376,6 @@ struct gasket_driver_desc {
 	 */
 	struct gasket_coherent_buffer_desc coherent_buffer_description;
 
-	/* Offset of wire interrupt registers. */
-	const struct gasket_wire_interrupt_offsets *wire_interrupt_offsets;
-
 	/* Interrupt type. (One of gasket_interrupt_type). */
 	int interrupt_type;
 
@@ -409,29 +399,6 @@ struct gasket_driver_desc {
 
 	/* Driver callback functions - all may be NULL */
 	/*
-	 * add_dev_cb: Callback when a device is found.
-	 * @dev: The gasket_dev struct for this driver instance.
-	 *
-	 * This callback should initialize the device-specific cb_data.
-	 * Called when a device is found by the driver,
-	 * before any BAR ranges have been mapped. If this call fails (returns
-	 * nonzero), remove_dev_cb will be called.
-	 *
-	 */
-	int (*add_dev_cb)(struct gasket_dev *dev);
-
-	/*
-	 * remove_dev_cb: Callback for when a device is removed from the system.
-	 * @dev: The gasket_dev struct for this driver instance.
-	 *
-	 * This callback should free data allocated in add_dev_cb.
-	 * Called immediately before a device is unregistered by the driver.
-	 * All framework-managed resources will have been cleaned up by the time
-	 * this callback is invoked (PCI BARs, character devices, ...).
-	 */
-	int (*remove_dev_cb)(struct gasket_dev *dev);
-
-	/*
 	 * device_open_cb: Callback for when a device node is opened in write
 	 * mode.
 	 * @dev: The gasket_dev struct for this driver instance.
@@ -450,8 +417,8 @@ struct gasket_driver_desc {
 	 * descriptor for an open file is closed. This call is intended to
 	 * handle any per-user or per-fd cleanup.
 	 */
-	int (*device_release_cb)(
-		struct gasket_dev *gasket_dev, struct file *file);
+	int (*device_release_cb)(struct gasket_dev *gasket_dev,
+				 struct file *file);
 
 	/*
 	 * device_close_cb: Callback for when a device node is closed for the
@@ -467,47 +434,6 @@ struct gasket_driver_desc {
 	int (*device_close_cb)(struct gasket_dev *dev);
 
 	/*
-	 * enable_dev_cb: Callback immediately before enabling the device.
-	 * @dev: Pointer to the gasket_dev struct for this driver instance.
-	 *
-	 * This callback is invoked after the device has been added and all BAR
-	 * spaces mapped, immediately before registering and enabling the
-	 * [character] device via cdev_add. If this call fails (returns
-	 * nonzero), disable_dev_cb will be called.
-	 *
-	 * Note that cdev are initialized but not active
-	 * (cdev_add has not yet been called) when this callback is invoked.
-	 */
-	int (*enable_dev_cb)(struct gasket_dev *dev);
-
-	/*
-	 * disable_dev_cb: Callback immediately after disabling the device.
-	 * @dev: Pointer to the gasket_dev struct for this driver instance.
-	 *
-	 * Called during device shutdown, immediately after disabling device
-	 * operations via cdev_del.
-	 */
-	int (*disable_dev_cb)(struct gasket_dev *dev);
-
-	/*
-	 * sysfs_setup_cb: Callback to set up driver-specific sysfs nodes.
-	 * @dev: Pointer to the gasket_dev struct for this device.
-	 *
-	 * Called just before enable_dev_cb.
-	 *
-	 */
-	int (*sysfs_setup_cb)(struct gasket_dev *dev);
-
-	/*
-	 * sysfs_cleanup_cb: Callback to clean up driver-specific sysfs nodes.
-	 * @dev: Pointer to the gasket_dev struct for this device.
-	 *
-	 * Called just before disable_dev_cb.
-	 *
-	 */
-	int (*sysfs_cleanup_cb)(struct gasket_dev *dev);
-
-	/*
 	 * get_mappable_regions_cb: Get descriptors of mappable device memory.
 	 * @gasket_dev: Pointer to the struct gasket_dev for this device.
 	 * @bar_index: BAR for which to retrieve memory ranges.
@@ -520,10 +446,10 @@ struct gasket_driver_desc {
 	 * information is then compared to mmap request to determine which
 	 * regions to actually map.
 	 */
-	int (*get_mappable_regions_cb)(
-		struct gasket_dev *gasket_dev, int bar_index,
-		struct gasket_mappable_region **mappable_regions,
-		int *num_mappable_regions);
+	int (*get_mappable_regions_cb)(struct gasket_dev *gasket_dev,
+				       int bar_index,
+				       struct gasket_mappable_region **mappable_regions,
+				       int *num_mappable_regions);
 
 	/*
 	 * ioctl_permissions_cb: Check permissions for generic ioctls.
@@ -549,7 +475,7 @@ struct gasket_driver_desc {
 	 * return -EINVAL. Should return an error status (either -EINVAL or
 	 * the error result of the ioctl being handled).
 	 */
-	long (*ioctl_handler_cb)(struct file *filp, uint cmd, ulong arg);
+	gasket_ioctl_handler_cb_t ioctl_handler_cb;
 
 	/*
 	 * device_status_cb: Callback to determine device health.
@@ -573,17 +499,12 @@ struct gasket_driver_desc {
 	/*
 	 * device_reset_cb: Reset the hardware in question.
 	 * @dev: Pointer to the gasket_dev structure for this device.
-	 * @type: Integer representing reset type. (All
-	 * Gasket resets have an integer representing their type
-	 * defined in (device)_ioctl.h; the specific resets are
-	 * device-dependent, but are handled in the device-specific
-	 * callback anyways.)
 	 *
 	 * Called by reset ioctls. This function should not
 	 * lock the gasket_dev mutex. It should return 0 on success
 	 * and an error on failure.
 	 */
-	int (*device_reset_cb)(struct gasket_dev *dev, uint reset_type);
+	int (*device_reset_cb)(struct gasket_dev *dev);
 };
 
 /*
@@ -605,18 +526,28 @@ int gasket_register_device(const struct gasket_driver_desc *desc);
  */
 void gasket_unregister_device(const struct gasket_driver_desc *desc);
 
+/* Add a PCI gasket device. */
+int gasket_pci_add_device(struct pci_dev *pci_dev,
+			  struct gasket_dev **gasket_devp);
+/* Remove a PCI gasket device. */
+void gasket_pci_remove_device(struct pci_dev *pci_dev);
+
+/* Enable a Gasket device. */
+int gasket_enable_device(struct gasket_dev *gasket_dev);
+
+/* Disable a Gasket device. */
+void gasket_disable_device(struct gasket_dev *gasket_dev);
+
 /*
  * Reset the Gasket device.
  * @gasket_dev: Gasket device struct.
- * @reset_type: Uint representing requested reset type. Should be
- * valid in the underlying callback.
  *
  * Calls device_reset_cb. Returns 0 on success and an error code othewrise.
  * gasket_reset_nolock will not lock the mutex, gasket_reset will.
  *
  */
-int gasket_reset(struct gasket_dev *gasket_dev, uint reset_type);
-int gasket_reset_nolock(struct gasket_dev *gasket_dev, uint reset_type);
+int gasket_reset(struct gasket_dev *gasket_dev);
+int gasket_reset_nolock(struct gasket_dev *gasket_dev);
 
 /*
  * Memory management functions. These will likely be spun off into their own
@@ -624,16 +555,16 @@ int gasket_reset_nolock(struct gasket_dev *gasket_dev, uint reset_type);
  */
 
 /* Unmaps the specified mappable region from a VMA. */
-int gasket_mm_unmap_region(
-	const struct gasket_dev *gasket_dev, struct vm_area_struct *vma,
-	const struct gasket_mappable_region *map_region);
+int gasket_mm_unmap_region(const struct gasket_dev *gasket_dev,
+			   struct vm_area_struct *vma,
+			   const struct gasket_mappable_region *map_region);
 
 /*
  * Get the ioctl permissions callback.
  * @gasket_dev: Gasket device structure.
  */
-gasket_ioctl_permissions_cb_t gasket_get_ioctl_permissions_cb(
-	struct gasket_dev *gasket_dev);
+gasket_ioctl_permissions_cb_t
+gasket_get_ioctl_permissions_cb(struct gasket_dev *gasket_dev);
 
 /**
  * Lookup a name by number in a num_name table.
@@ -641,37 +572,37 @@ gasket_ioctl_permissions_cb_t gasket_get_ioctl_permissions_cb(
  * @table: Array of num_name structures, the table for the lookup.
  *
  */
-const char *gasket_num_name_lookup(
-	uint num, const struct gasket_num_name *table);
+const char *gasket_num_name_lookup(uint num,
+				   const struct gasket_num_name *table);
 
 /* Handy inlines */
-static inline ulong gasket_dev_read_64(
-	struct gasket_dev *gasket_dev, int bar, ulong location)
+static inline ulong gasket_dev_read_64(struct gasket_dev *gasket_dev, int bar,
+				       ulong location)
 {
-	return readq(&gasket_dev->bar_data[bar].virt_base[location]);
+	return readq_relaxed(&gasket_dev->bar_data[bar].virt_base[location]);
 }
 
-static inline void gasket_dev_write_64(
-	struct gasket_dev *dev, u64 value, int bar, ulong location)
+static inline void gasket_dev_write_64(struct gasket_dev *dev, u64 value,
+				       int bar, ulong location)
 {
-	writeq(value, &dev->bar_data[bar].virt_base[location]);
+	writeq_relaxed(value, &dev->bar_data[bar].virt_base[location]);
 }
 
-static inline void gasket_dev_write_32(
-	struct gasket_dev *dev, u32 value, int bar, ulong location)
+static inline void gasket_dev_write_32(struct gasket_dev *dev, u32 value,
+				       int bar, ulong location)
 {
-	writel(value, &dev->bar_data[bar].virt_base[location]);
+	writel_relaxed(value, &dev->bar_data[bar].virt_base[location]);
 }
 
-static inline u32 gasket_dev_read_32(
-	struct gasket_dev *dev, int bar, ulong location)
+static inline u32 gasket_dev_read_32(struct gasket_dev *dev, int bar,
+				     ulong location)
 {
-	return readl(&dev->bar_data[bar].virt_base[location]);
+	return readl_relaxed(&dev->bar_data[bar].virt_base[location]);
 }
 
-static inline void gasket_read_modify_write_64(
-	struct gasket_dev *dev, int bar, ulong location, u64 value,
-	u64 mask_width, u64 mask_shift)
+static inline void gasket_read_modify_write_64(struct gasket_dev *dev, int bar,
+					       ulong location, u64 value,
+					       u64 mask_width, u64 mask_shift)
 {
 	u64 mask, tmp;
 
@@ -681,9 +612,9 @@ static inline void gasket_read_modify_write_64(
 	gasket_dev_write_64(dev, tmp, bar, location);
 }
 
-static inline void gasket_read_modify_write_32(
-	struct gasket_dev *dev, int bar, ulong location, u32 value,
-	u32 mask_width, u32 mask_shift)
+static inline void gasket_read_modify_write_32(struct gasket_dev *dev, int bar,
+					       ulong location, u32 value,
+					       u32 mask_width, u32 mask_shift)
 {
 	u32 mask, tmp;
 
@@ -700,8 +631,8 @@ const struct gasket_driver_desc *gasket_get_driver_desc(struct gasket_dev *dev);
 struct device *gasket_get_device(struct gasket_dev *dev);
 
 /* Helper function, Asynchronous waits on a given set of bits. */
-int gasket_wait_with_reschedule(
-	struct gasket_dev *gasket_dev, int bar, u64 offset, u64 mask, u64 val,
-	uint max_retries, u64 delay_ms);
+int gasket_wait_with_reschedule(struct gasket_dev *gasket_dev, int bar,
+				u64 offset, u64 mask, u64 val,
+				uint max_retries, u64 delay_ms);
 
 #endif /* __GASKET_CORE_H__ */
