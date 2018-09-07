@@ -37,6 +37,18 @@
 			};
 		};
 	};
+
+	reg_apex: apex_pmic {
+		compatible = "regulator-fixed";
+		regulator-name = "apex_regulators";
+		regulator-min-microvolt = <1000000>;
+		regulator-max-microvolt = <1000000>;
+		gpio = <&gpio3 15 GPIO_ACTIVE_HIGH>;
+		enable-active-high;
+		gpio-open-drain;
+		regulator-boot-on;
+		regulator-always-on;
+	};
 };
 
 &iomuxc {
@@ -242,24 +254,6 @@
 	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
 	assigned-clock-rates = <0>, <24576000>;
 	status = "okay";
-};
-
-&i2c1 {
-	status = "okay";
-
-	asic_pmic: apex_pmic@1f {
-	 compatible = "apex_pmic";
-	 reg = <0x1f>;
-	 status = "okay";
-
-	 regulators {
-	  apex_regulators: apex_pmic@0 {
-	   reg = <0>;
-	   regulator-compatible = "apex_regulators";
-	   regulator-always-on;
-	  };
-	 };
-	};
 };
 
 &i2c2 {
