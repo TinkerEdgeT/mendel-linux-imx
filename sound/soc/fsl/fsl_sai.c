@@ -448,16 +448,12 @@ static int fsl_sai_set_bclk(struct snd_soc_dai *dai, bool tx, u32 freq)
 
 		ret = clk_rate - ratio * freq;
 
-		/*
-		 * Drop the source that can not be
-		 * divided into the required rate.
-		 */
-		if (ret != 0 && clk_rate / ret < 1000)
-			continue;
-
-		dev_dbg(dai->dev,
+		dev_info(dai->dev,
 			"ratio %d for freq %dHz based on clock %ldHz\n",
 			ratio, freq, clk_rate);
+
+		if (ratio % 2 != 0)
+			ratio -= 1;
 
 		if (ratio % 2 == 0 && ratio >= 2 && ratio <= 512)
 			ratio /= 2;
