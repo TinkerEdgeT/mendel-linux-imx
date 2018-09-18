@@ -27,6 +27,7 @@
 #include <linux/device.h>
 #include <linux/delay.h>
 #include <linux/fs.h>
+#include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
 #include <linux/pci.h>
@@ -39,6 +40,8 @@
 
 #define APEX_PCI_VENDOR_ID 0x1ac1
 #define APEX_PCI_DEVICE_ID 0x089a
+
+static DEFINE_MUTEX(power_owned_lock);
 
 static struct class *apex_power_class;
 static struct device *apex_power_device;
@@ -100,9 +103,6 @@ static int apex_power_up(void)
 		printk(KERN_ERR "apex_power: Unable to enable regulator.\n");
 	}
 
-	// Allot time for the PMIC to sequence and the Apex device to boot.
-	msleep(100);
-
 #if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	request_bus_freq(BUS_FREQ_HIGH);
 #endif
@@ -132,19 +132,34 @@ static int apex_power_release(struct inode* inode, struct file* filep)
 {
 	int ret = 0;
 
+	if (mutex_lock_interruptible(&power_owned_lock)) {
+		return -ENOLCK;
+	}
+
 	if (apex_power_owned != true) {
-		return -EPERM;
+		ret = -EPERM;
+		goto out;
 	}
 
 	ret = apex_power_down();
 	apex_power_owned = false;
+
+out:
+	mutex_unlock(&power_owned_lock);
 	return ret;
 }
 
 static int apex_power_open(struct inode* inode, struct file* filep)
 {
+	int ret = 0;
+
+	if (mutex_lock_interruptible(&power_owned_lock)) {
+		return -ENOLCK;
+	}
+
 	if (apex_power_owned != false) {
-		return -EPERM;
+		ret = -EPERM;
+		goto out;
 	}
 	apex_power_owned = true;
 
@@ -152,7 +167,11 @@ static int apex_power_open(struct inode* inode, struct file* filep)
 	   power down. */
 	cancel_delayed_work_sync(&apex_power_delayed_init);
 
-	return apex_power_up();
+	ret = apex_power_up();
+
+out:
+	mutex_unlock(&power_owned_lock);
+	return ret;
 }
 
 static const struct file_operations apex_power_fops = {
@@ -176,7 +195,15 @@ static void apex_power_delayed_init_callback(struct work_struct *work)
 	pci_dev_put(apex_dev);
 
 	printk(KERN_INFO "apex_power: init routines powering down apex\n");
+
+	if (mutex_lock_interruptible(&power_owned_lock)) {
+		printk(KERN_ERR "apex_power: Unable to lock mutex.\n");
+		return;
+	}
+
 	apex_power_down();
+
+	mutex_unlock(&power_owned_lock);
 }
 
 static int __init apex_power_init(void)
