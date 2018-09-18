@@ -1242,3 +1242,4 @@ config TOUCHSCREEN_ROHM_BU21023
 endif
 
 source "drivers/input/touchscreen/focaltech_touch/Kconfig"
+source "drivers/input/touchscreen/sec_ts/Kconfig"
