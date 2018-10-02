@@ -256,7 +256,7 @@ static int __init apex_power_init(void)
 
 	INIT_DELAYED_WORK(&apex_power_delayed_init,
 			  apex_power_delayed_init_callback);
-	schedule_delayed_work(&apex_power_delayed_init, msecs_to_jiffies(1000));
+	schedule_delayed_work(&apex_power_delayed_init, msecs_to_jiffies(7000));
 
 	printk(KERN_INFO "apex_power: initialized.\n");
 
