@@ -1128,8 +1128,10 @@ static void imx_uart_dma_exit(struct imx_port *sport)
 		sport->dma_chan_tx = NULL;
 	}
 
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	if (sport->dma_is_inited)
 		release_bus_freq(BUS_FREQ_HIGH);
+#endif
 
 	sport->dma_is_inited = 0;
 }
@@ -1190,7 +1192,9 @@ static int imx_uart_dma_init(struct imx_port *sport)
 	}
 
 	sport->dma_is_inited = 1;
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	request_bus_freq(BUS_FREQ_HIGH);
+#endif
 
 	return 0;
 err:
