@@ -1256,7 +1256,7 @@ void ol_tx_throttle_set_level(struct ol_txrx_pdev_t *pdev, int level)
         return;
     }
 
-    TXRX_PRINT(TXRX_PRINT_LEVEL_ERR, "Setting throttle level %d\n", level);
+    TXRX_PRINT(TXRX_PRINT_LEVEL_WARN, "Setting throttle level %d\n", level);
 
     /* Set the current throttle level */
     pdev->tx_throttle.current_throttle_level = (throttle_level)level;
