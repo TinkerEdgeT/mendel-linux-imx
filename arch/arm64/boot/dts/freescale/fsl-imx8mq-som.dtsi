@@ -45,6 +45,7 @@
 			enable-active-high;
 			gpio-open-drain;
 			regulator-boot-on;
+			regulator-always-on;
 			startup-delay-us = <100000>;
 		};
 	};
