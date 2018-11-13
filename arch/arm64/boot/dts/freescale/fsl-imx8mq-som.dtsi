@@ -64,6 +64,12 @@
 		status ="okay";
 	};
 
+	fan: gpio_fan {
+		compatible = "gpio-fan";
+		gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
+		gpio-fan,speed-map = <0 0>, <8600 1>;
+		#cooling-cells = <2>;
+	};
 };
 
 &clk {
@@ -133,7 +139,6 @@
 
 		pinctrl_typec: typecgrp {
 			fsl,pins = <
-				MX8MQ_IOMUXC_NAND_CLE_GPIO3_IO5		0x16
 				MX8MQ_IOMUXC_NAND_ALE_GPIO3_IO0		0x19
 			>;
 		};
@@ -703,6 +708,23 @@
 	port@1 {
 		mipi_dsi_bridge_out: endpoint {
 			remote-endpoint = <&panel1_in>;
+		};
+	};
+};
+
+&cpu_thermal {
+	trips {
+		fan_toggle0: trip4 {
+			temperature = <65000>;
+			hysteresis = <10000>;
+			type = "active";
+		};
+	};
+
+	cooling-maps {
+		map4 {
+			trip = <&fan_toggle0>;
+			cooling-device = <&fan 0 1>;
 		};
 	};
 };
