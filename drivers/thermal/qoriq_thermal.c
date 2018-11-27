@@ -121,7 +121,7 @@ static int tmu_get_temp(void *p, int *temp)
 	u32 val;
 	struct qoriq_tmu_data *data = p;
 
-	val = tmu_read(data, &data->regs->site[data->sensor_id].tritsr);
+	val = tmu_read(data, &data->regs->site[data->sensor_id].tratsr);
 	*temp = (val & 0xff) * 1000;
 
 	return 0;
