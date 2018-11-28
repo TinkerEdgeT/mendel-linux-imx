@@ -41,6 +41,9 @@
 #define APEX_PCI_VENDOR_ID 0x1ac1
 #define APEX_PCI_DEVICE_ID 0x089a
 
+#define APEX_ALLOWED_RETRIES 5
+#define APEX_RETRY_DELAY_MS 100
+
 static DEFINE_MUTEX(power_owned_lock);
 
 static struct class *apex_power_class;
@@ -58,6 +61,32 @@ static struct regulator *get_apex_regulator(void) {
 	}
 	return supply;
 }
+
+static struct pci_dev *get_apex_pci_device(bool rescan) {
+	int retries = 0;
+	struct pci_bus *pci_bus = NULL;
+	struct pci_dev *apex_dev = NULL;
+
+	for (retries = 0; retries < APEX_ALLOWED_RETRIES; retries++) {
+		/* For powering up, rescan the pci bus each retry */
+		if (rescan) {
+			pci_lock_rescan_remove();
+			while ((pci_bus = pci_find_next_bus(pci_bus)) != NULL) {
+				pci_rescan_bus(pci_bus);
+			}
+			pci_unlock_rescan_remove();
+		}
+
+		apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
+		if (apex_dev) {
+			break;
+		}
+		printk(KERN_ERR "apex_power: Unable to find apex device, retrying\n");
+		msleep(APEX_RETRY_DELAY_MS);
+	}
+	return apex_dev;
+}
+
 static int apex_power_down(void)
 {
 	struct pci_dev *apex_dev = NULL;
@@ -71,7 +100,7 @@ static int apex_power_down(void)
 	}
 #endif
 
-	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
+	apex_dev = get_apex_pci_device(/*rescan=*/ false);
 	if (!apex_dev) {
 		printk(KERN_ERR "apex_power: can't find Apex on PCI bus?!\n");
 		return -EIO;
@@ -92,7 +121,6 @@ static int apex_power_down(void)
 
 static int apex_power_up(void)
 {
-	struct pci_bus *pci_bus = NULL;
 	struct pci_dev *apex_dev = NULL;
 	int ret = 0;
 	struct regulator *supply;
@@ -107,13 +135,7 @@ static int apex_power_up(void)
 	request_bus_freq(BUS_FREQ_HIGH);
 #endif
 
-	pci_lock_rescan_remove();
-	while ((pci_bus = pci_find_next_bus(pci_bus)) != NULL) {
-		pci_rescan_bus(pci_bus);
-	}
-	pci_unlock_rescan_remove();
-
-	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
+	apex_dev = get_apex_pci_device(/*rescan=*/ true);
 	if (!apex_dev) {
 		printk(KERN_ERR "apex_power: can't find Apex on PCI bus?!\n");
 
