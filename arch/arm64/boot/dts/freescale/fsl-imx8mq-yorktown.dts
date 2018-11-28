@@ -159,6 +159,11 @@
 				MX8MQ_IOMUXC_NAND_CE1_B_GPIO3_IO2		0x82
 			>;
 		};
+		pinctrl_usb5744: usb5744 {
+			fsl,pins = <
+				MX8MQ_IOMUXC_SAI1_RXC_GPIO4_IO1			0x19
+			>;
+		};
 	};
 };
 
@@ -252,6 +257,14 @@
 		reg = <0x3d>;
 		interrupt-parent = <&gpio3>;
 		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+	};
+
+	usb3_hub: usb5744@2d {
+		compatible = "microchip,usb5744";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb5744>;
+		reg = <0x2d>;
+		reset-gpios = <&gpio4 1 GPIO_ACTIVE_LOW>;
 	};
 
 	power_monitor_m2_a: power_monitor_m2_a@40 {
