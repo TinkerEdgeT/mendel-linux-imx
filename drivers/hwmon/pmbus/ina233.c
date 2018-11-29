@@ -5,10 +5,10 @@
  * Copyright (C) 2018 Google, Inc.
  */
 
-#include "pmbus.h"
 #include <linux/i2c.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
+#include "pmbus.h"
 
 #define CAL_FACTOR 5120000 // 1mA / LSB
 #define MFR_CALIBRATION 0xD4
