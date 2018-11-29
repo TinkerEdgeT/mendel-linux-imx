@@ -80,5 +80,8 @@ obj-$(CONFIG_LEDS_DAC124S085)		+= leds-dac124s085.o
 # LED Userspace Drivers
 obj-$(CONFIG_LEDS_USER)			+= uleds.o
 
+# LED I2C Drivers
+obj-$(CONFIG_LEDS_KTD202X)		+= leds-ktd202x.o
+
 # LED Triggers
 obj-$(CONFIG_LEDS_TRIGGERS)		+= trigger/
