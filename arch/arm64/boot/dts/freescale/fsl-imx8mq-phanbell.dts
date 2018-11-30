@@ -56,6 +56,15 @@
 
 &iomuxc {
 	imx8mq-phanbell {
+		pinctrl_sai1: sai1grp {
+			fsl,pins = <
+					MX8MQ_IOMUXC_SAI1_TXFS_SAI1_TX_SYNC     0xd6
+					MX8MQ_IOMUXC_SAI1_TXC_SAI1_TX_BCLK      0xd6
+					MX8MQ_IOMUXC_SAI1_MCLK_SAI1_MCLK        0xd6
+					MX8MQ_IOMUXC_SAI1_TXD0_SAI1_TX_DATA0    0xd6
+					MX8MQ_IOMUXC_SAI1_RXD0_SAI1_RX_DATA0    0xd6
+				>;
+		};
 		pinctrl_sai2: sai2grp {
 			fsl,pins = <
 					MX8MQ_IOMUXC_SAI2_TXFS_SAI2_TX_SYNC     0xd6
@@ -126,10 +135,6 @@
 				MX8MQ_IOMUXC_GPIO1_IO08_GPIO1_IO8		0x19
 				MX8MQ_IOMUXC_SAI5_RXD1_GPIO3_IO22		0x19
 				MX8MQ_IOMUXC_SAI5_RXD3_GPIO3_IO24		0x19
-				MX8MQ_IOMUXC_SAI1_RXD0_GPIO4_IO2		0x19
-				MX8MQ_IOMUXC_SAI1_TXFS_GPIO4_IO10		0x19
-				MX8MQ_IOMUXC_SAI1_TXC_GPIO4_IO11		0x19
-				MX8MQ_IOMUXC_SAI1_TXD0_GPIO4_IO12		0x19
 				MX8MQ_IOMUXC_ECSPI2_SCLK_GPIO5_IO10		0x19
 				MX8MQ_IOMUXC_ECSPI2_MISO_GPIO5_IO12		0x19
 				MX8MQ_IOMUXC_ECSPI2_SS0_GPIO5_IO13		0x19
@@ -178,6 +183,12 @@
 
 &dcss {
 	disp-dev = "hdmi_disp";
+	status = "okay";
+};
+
+&sai1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sai1>;
 	status = "okay";
 };
 
