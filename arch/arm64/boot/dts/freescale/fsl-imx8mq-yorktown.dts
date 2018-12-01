@@ -164,6 +164,12 @@
 				MX8MQ_IOMUXC_SAI1_RXC_GPIO4_IO1			0x19
 			>;
 		};
+
+		pinctrl_i2c_mux: pinctrl_mux_grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_NAND_CLE_GPIO3_IO5		0x18
+			>;
+		};
 	};
 };
 
@@ -315,8 +321,28 @@
 		shunt-resistor = <10000>;
 	};
 
+	i2c-mux@70 {
+		compatible = "nxp,pca9544";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x70>;
+		pinctrl-0 = <&pinctrl_i2c_mux>;
+		pinctrl-names = "default";
+
+		interrupt-parent = <&gpio3>;
+		interrupts = <5 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+	};
 };
 
+&gpio3 {
+	i2c-mux {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_LOW>;
+		input;
+	};
+};
 
 &csi1_bridge {
 	fsl,mipi-mode;
