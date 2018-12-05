@@ -69,6 +69,23 @@
 				MX8MQ_IOMUXC_ECSPI2_SS0_GPIO5_IO13 0x16
 			>;
 		};
+		pinctrl_ts_irq: ts_irq {
+			fsl,pins = <
+				MX8MQ_IOMUXC_NAND_DATA06_GPIO3_IO12 0x16
+			>;
+		};
+	};
+};
+
+&i2c2 {
+	status = "okay";
+	sec_ts: sec_ts@48 {
+		compatible = "sec,sec_ts";
+		reg = <0x48>;
+		status = "okay";
+		pinctrl-0 = <&pinctrl_ts_irq>;
+		sec,irq_gpio = <&gpio3 12 GPIO_ACTIVE_LOW>;
+		sec,max_coords = <1080>, <2160>;
 	};
 };
 
