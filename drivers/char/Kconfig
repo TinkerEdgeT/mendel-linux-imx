@@ -170,7 +170,7 @@ config PPDEV
 source "drivers/tty/hvc/Kconfig"
 
 config GOOGLE_APEX_POWER
-	bool "Google Apex TPU PCI-based power control"
+	tristate "Google Apex TPU PCI-based power control"
 	depends on PCI
 	help
 	  Character device for managing the power of the Google Apex

@@ -22,6 +22,12 @@
 		stdout-path = &uart1;
 	};
 
+	apex_power {
+		compatible = "google,apex-power";
+		status = "okay";
+		power-supply = <&reg_apex>;
+	};
+
 	regulators {
 		compatible = "simple-bus";
 		#address-cells = <1>;

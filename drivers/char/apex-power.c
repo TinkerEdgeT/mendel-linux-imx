@@ -23,10 +23,12 @@
 #include <linux/module.h>
 
 #include <asm/cmpxchg.h>
+#include <linux/atomic.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
 #include <linux/delay.h>
 #include <linux/fs.h>
+#include <linux/kernel.h>
 #include <linux/mutex.h>
 #include <linux/of.h>
 #include <linux/of_platform.h>
@@ -44,25 +46,21 @@
 #define APEX_ALLOWED_RETRIES 5
 #define APEX_RETRY_DELAY_MS 100
 
-static DEFINE_MUTEX(power_owned_lock);
-
+static atomic_t apex_power_minor = ATOMIC_INIT(0);
 static struct class *apex_power_class;
-static struct device *apex_power_device;
-static struct cdev apex_power_cdev;
 static int apex_power_major;
-static bool apex_power_owned;
-static struct delayed_work apex_power_delayed_init;
 
-static struct regulator *get_apex_regulator(void) {
+struct apex_power_priv {
+	struct platform_device *pdev;
+	struct device *device;
+	struct cdev cdev;
+	bool owned;
+	struct mutex owned_lock;
+	struct delayed_work delayed_init;
 	struct regulator *supply;
-	supply = regulator_get(NULL, "apex_regulators");
-	if (IS_ERR(supply)) {
-		printk(KERN_ERR "apex_power: Unable to find regulator.\n");
-	}
-	return supply;
-}
+};
 
-static struct pci_dev *get_apex_pci_device(bool rescan) {
+static struct pci_dev *get_apex_pci_device(struct apex_power_priv *apex_power_data, bool rescan) {
 	int retries = 0;
 	struct pci_bus *pci_bus = NULL;
 	struct pci_dev *apex_dev = NULL;
@@ -81,28 +79,27 @@ static struct pci_dev *get_apex_pci_device(bool rescan) {
 		if (apex_dev) {
 			break;
 		}
-		printk(KERN_ERR "apex_power: Unable to find apex device, retrying\n");
+		dev_err(&apex_power_data->pdev->dev, "Unable to find apex device, retrying");
 		msleep(APEX_RETRY_DELAY_MS);
 	}
 	return apex_dev;
 }
 
-static int apex_power_down(void)
+static int apex_power_down(struct apex_power_priv *apex_power_data)
 {
 	struct pci_dev *apex_dev = NULL;
 	struct pci_dev *apex_connected_bus = NULL;
-	struct regulator *supply;
 	int ret = 0;
 
 #if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
-	if (apex_power_owned) {
+	if (apex_power_data->owned) {
 		release_bus_freq(BUS_FREQ_HIGH);
 	}
 #endif
 
-	apex_dev = get_apex_pci_device(/*rescan=*/ false);
+	apex_dev = get_apex_pci_device(apex_power_data, /*rescan=*/ false);
 	if (!apex_dev) {
-		printk(KERN_ERR "apex_power: can't find Apex on PCI bus?!\n");
+		dev_err(&apex_power_data->pdev->dev, "can't find Apex on PCI bus?!");
 		return -EIO;
 	}
 	apex_connected_bus = apex_dev->bus->self;
@@ -110,34 +107,31 @@ static int apex_power_down(void)
 
 	pci_stop_and_remove_bus_device_locked(apex_connected_bus);
 
-	supply = get_apex_regulator();
-	ret = regulator_disable(supply);
+	ret = regulator_disable(apex_power_data->supply);
 	if (ret) {
-		printk(KERN_ERR "apex_power: Unable to disable regulator.\n");
+		dev_err(&apex_power_data->pdev->dev, "Unable to disable regulator.");
 	}
 
 	return 0;
 }
 
-static int apex_power_up(void)
+static int apex_power_up(struct apex_power_priv *apex_power_data)
 {
 	struct pci_dev *apex_dev = NULL;
 	int ret = 0;
-	struct regulator *supply;
 
-	supply = get_apex_regulator();
-	ret = regulator_enable(supply);
+	ret = regulator_enable(apex_power_data->supply);
 	if (ret) {
-		printk(KERN_ERR "apex_power: Unable to enable regulator.\n");
+		dev_err(&apex_power_data->pdev->dev, "Unable to enable regulator.");
 	}
 
 #if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 	request_bus_freq(BUS_FREQ_HIGH);
 #endif
 
-	apex_dev = get_apex_pci_device(/*rescan=*/ true);
+	apex_dev = get_apex_pci_device(apex_power_data, /*rescan=*/ true);
 	if (!apex_dev) {
-		printk(KERN_ERR "apex_power: can't find Apex on PCI bus?!\n");
+		dev_err(&apex_power_data->pdev->dev, "can't find Apex on PCI bus?!");
 
 #if defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 		release_bus_freq(BUS_FREQ_HIGH);
@@ -153,46 +147,49 @@ static int apex_power_up(void)
 static int apex_power_release(struct inode* inode, struct file* filep)
 {
 	int ret = 0;
-
-	if (mutex_lock_interruptible(&power_owned_lock)) {
+	struct apex_power_priv *apex_power_data = 
+		container_of(inode->i_cdev, struct apex_power_priv, cdev);
+	if (mutex_lock_interruptible(&apex_power_data->owned_lock)) {
 		return -ENOLCK;
 	}
 
-	if (apex_power_owned != true) {
+	if (apex_power_data->owned != true) {
 		ret = -EPERM;
 		goto out;
 	}
 
-	ret = apex_power_down();
-	apex_power_owned = false;
+	ret = apex_power_down(apex_power_data);
+	apex_power_data->owned = false;
 
 out:
-	mutex_unlock(&power_owned_lock);
+	mutex_unlock(&apex_power_data->owned_lock);
 	return ret;
 }
 
 static int apex_power_open(struct inode* inode, struct file* filep)
 {
 	int ret = 0;
+	struct apex_power_priv *apex_power_data = 
+		container_of(inode->i_cdev, struct apex_power_priv, cdev);
 
-	if (mutex_lock_interruptible(&power_owned_lock)) {
+	if (mutex_lock_interruptible(&apex_power_data->owned_lock)) {
 		return -ENOLCK;
 	}
 
-	if (apex_power_owned != false) {
+	if (apex_power_data->owned != false) {
 		ret = -EPERM;
 		goto out;
 	}
-	apex_power_owned = true;
+	apex_power_data->owned = true;
 
 	/* Ensure that we don't accidentally run afoul of the initial delayed
 	   power down. */
-	cancel_delayed_work_sync(&apex_power_delayed_init);
+	cancel_delayed_work_sync(&apex_power_data->delayed_init);
 
-	ret = apex_power_up();
+	ret = apex_power_up(apex_power_data);
 
 out:
-	mutex_unlock(&power_owned_lock);
+	mutex_unlock(&apex_power_data->owned_lock);
 	return ret;
 }
 
@@ -205,96 +202,138 @@ static const struct file_operations apex_power_fops = {
 static void apex_power_delayed_init_callback(struct work_struct *work)
 {
 	struct pci_dev *apex_dev = NULL;
+	struct apex_power_priv *apex_power_data =
+		container_of(
+			container_of(work, struct delayed_work, work),
+			struct apex_power_priv,
+			delayed_init);
 	apex_dev = pci_get_device(APEX_PCI_VENDOR_ID, APEX_PCI_DEVICE_ID, NULL);
 
 	if (!apex_dev) {
-		printk(KERN_INFO "apex_power: rescheduling late init power down\n");
-		schedule_delayed_work(&apex_power_delayed_init,
+		dev_info(&apex_power_data->pdev->dev, "rescheduling late init power down");
+		schedule_delayed_work(&apex_power_data->delayed_init,
 				      msecs_to_jiffies(1000));
 		return;
 	}
 
 	pci_dev_put(apex_dev);
 
-	printk(KERN_INFO "apex_power: init routines powering down apex\n");
+	dev_info(&apex_power_data->pdev->dev, "init routines powering down apex");
 
-	if (mutex_lock_interruptible(&power_owned_lock)) {
-		printk(KERN_ERR "apex_power: Unable to lock mutex.\n");
+	if (mutex_lock_interruptible(&apex_power_data->owned_lock)) {
+		dev_err(&apex_power_data->pdev->dev, "Unable to lock mutex.");
 		return;
 	}
 
-	apex_power_down();
+	apex_power_down(apex_power_data);
 
-	mutex_unlock(&power_owned_lock);
+	mutex_unlock(&apex_power_data->owned_lock);
 }
 
-static int __init apex_power_init(void)
+static int apex_power_probe(struct platform_device *pdev)
 {
 	dev_t apex_power_dev;
-	int apex_power_major;
 	int ret = 0;
-	struct regulator *supply;
+	struct apex_power_priv *apex_power_data = 
+		devm_kzalloc(&pdev->dev, sizeof(struct apex_power_priv), GFP_KERNEL);
+	if (!apex_power_data) {
+		return -ENOMEM;
+	}
+	platform_set_drvdata(pdev, apex_power_data);
+	apex_power_data->pdev = pdev;
+	mutex_init(&apex_power_data->owned_lock);
+
 	// Enable the supply in regulator framework to ensure power isn't removed
 	// until init is complete.
-
-	supply = get_apex_regulator();
-	ret = regulator_enable(supply);
+	apex_power_data->supply = regulator_get_exclusive(&pdev->dev, "power");
+	if (IS_ERR(apex_power_data->supply)) {
+		dev_err(&pdev->dev, "Unable to find regulator.");
+		return -ENODEV;
+	}
+	
+	ret = regulator_enable(apex_power_data->supply);
 	if (ret) {
-		printk(KERN_ERR "apex_power: Unable to enable regulator.\n");
+		dev_err(&pdev->dev, "Unable to enable regulator.");
+		return -ENODEV;
 	}
 
+	apex_power_dev = MKDEV(apex_power_major, atomic_inc_return(&apex_power_minor));
+	cdev_init(&apex_power_data->cdev, &apex_power_fops);
+	ret = cdev_add(&apex_power_data->cdev, apex_power_dev, 1);
+
+	if (ret) {
+		dev_err(&pdev->dev, "Unable to add cdev!");
+	}
+
+	apex_power_data->device = device_create(apex_power_class, NULL, apex_power_dev,
+					  NULL, "%s", dev_name(&pdev->dev));
+	if (IS_ERR(apex_power_data->device)) {
+		dev_err(&pdev->dev, "device_create failed.");
+		cdev_del(&apex_power_data->cdev);
+	}
+
+	INIT_DELAYED_WORK(&apex_power_data->delayed_init,
+			  apex_power_delayed_init_callback);
+	schedule_delayed_work(&apex_power_data->delayed_init, msecs_to_jiffies(7000));
+
+	dev_info(&pdev->dev, "initialized.");
+
+	return 0;
+}
+
+static int apex_power_remove(struct platform_device *pdev)
+{
+	struct apex_power_priv *apex_power_data = platform_get_drvdata(pdev); 
+	device_del(apex_power_data->device);
+	cdev_del(&apex_power_data->cdev);
+	regulator_disable(apex_power_data->supply);
+	regulator_put(apex_power_data->supply);
+	return 0;
+}
+
+static const struct of_device_id apex_power_dt_ids[] = {
+	{ .compatible = "google,apex-power", },
+	{}
+};
+MODULE_DEVICE_TABLE(of, apex_power_dt_ids);
+
+static struct platform_driver apex_power_driver = {
+	.driver = {
+		.name = "apex-power",
+		.owner = THIS_MODULE,
+		.of_match_table = of_match_ptr(apex_power_dt_ids),
+	},
+	.probe = apex_power_probe,
+	.remove = apex_power_remove,
+};
+
+static int __init apex_power_init(void) {
+	int ret;
+	dev_t apex_power_dev;
 	apex_power_class = class_create(THIS_MODULE, "apex_power");
 	if (IS_ERR(apex_power_class)) {
 		printk(KERN_ERR "apex_power: could not allocate device class\n");
 		return -ENODEV;
 	}
-
-	ret = alloc_chrdev_region(&apex_power_dev, 0, 1, "apex_power");
+	ret = alloc_chrdev_region(&apex_power_dev, 0, 255, "apex_power");
 	apex_power_major = MAJOR(apex_power_dev);
 	if (ret < 0) {
-		printk(KERN_ERR "apex_power: alloc_chrdev_region() failed\n");
+		printk(KERN_ERR "alloc_chrdev_region() failed\n");
 		class_destroy(apex_power_class);
 		return -ENODEV;
 	}
 
-	apex_power_dev = MKDEV(apex_power_major, 0);
-	cdev_init(&apex_power_cdev, &apex_power_fops);
-	ret = cdev_add(&apex_power_cdev, apex_power_dev, 1);
-
-	if (ret) {
-		printk(KERN_ERR "apex_power: Unable to add cdev!\n");
-		unregister_chrdev_region(apex_power_dev, 1);
-		class_destroy(apex_power_class);
-	}
-
-	apex_power_device = device_create(apex_power_class, NULL, apex_power_dev,
-					  NULL, "%s", "apex_power");
-	if (IS_ERR(apex_power_device)) {
-		printk(KERN_ERR "apex_power: device_create failed.\n");
-		cdev_del(&apex_power_cdev);
-		unregister_chrdev_region(apex_power_dev, 1);
-		class_destroy(apex_power_class);
-	}
-
-	INIT_DELAYED_WORK(&apex_power_delayed_init,
-			  apex_power_delayed_init_callback);
-	schedule_delayed_work(&apex_power_delayed_init, msecs_to_jiffies(7000));
-
-	printk(KERN_INFO "apex_power: initialized.\n");
-
-	return 0;
+	return platform_driver_register(&apex_power_driver);
 }
+module_init(apex_power_init);
 
-static void __exit apex_power_exit(void)
-{
-	device_del(apex_power_device);
-	cdev_del(&apex_power_cdev);
+static void __exit apex_power_exit(void) {
+	platform_driver_unregister(&apex_power_driver);
 	unregister_chrdev_region(MKDEV(apex_power_major, 0), 1);
 	class_destroy(apex_power_class);
 }
-
-module_init(apex_power_init);
 module_exit(apex_power_exit);
+
 MODULE_DESCRIPTION("Google Apex power management driver");
 MODULE_AUTHOR("June Tate-Gans <jtgans@google.com>");
 MODULE_ALIAS("platform:apex-power");
