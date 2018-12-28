@@ -50,7 +50,7 @@
 			gpio = <&gpio3 15 GPIO_ACTIVE_HIGH>;
 			enable-active-high;
 			gpio-open-drain;
-			regulator-boot-on;
+			regulator-always-on;
 			startup-delay-us = <500000>;
 		};
 	};
