@@ -16231,7 +16231,6 @@ static int hdd_initialize_mac_address(hdd_context_t *hdd_ctx)
 
 	hddLog(LOGW, FL("Can't update MAC via platform driver ret: %d"), ret);
 
-	#if 0
 	if (!hdd_ctx->cfg_ini->skip_mac_config) {
 		status = hdd_update_mac_config(hdd_ctx);
 		if (status == VOS_STATUS_SUCCESS)
@@ -16240,7 +16239,6 @@ static int hdd_initialize_mac_address(hdd_context_t *hdd_ctx)
 		hddLog(LOGW, FL("Can't update MAC from %s status: %d"),
 				WLAN_MAC_FILE, status);
 	}
-	#endif
 
 	if (!vos_is_macaddr_zero(&hdd_ctx->hw_macaddr)) {
 		hdd_update_macaddr(hdd_ctx->cfg_ini, hdd_ctx->hw_macaddr);
