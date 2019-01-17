@@ -52,6 +52,10 @@
 		google,model = "edgetpu-audio-card";
         status = "okay";
 	};
+
+	busfreq {
+		status = "disabled";
+	};
 };
 
 &iomuxc {
