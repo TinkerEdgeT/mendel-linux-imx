@@ -493,7 +493,7 @@ static int fsl_sai_set_bclk(struct snd_soc_dai *dai, bool tx, u32 freq)
 
 		ret = clk_rate - ratio * freq;
 
-		dev_info(dai->dev,
+		dev_dbg(dai->dev,
 			"ratio %d for freq %dHz based on clock %ldHz\n",
 			ratio, freq, clk_rate);
 
