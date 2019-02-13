@@ -1,5 +1,5 @@
 /*
- * ASoC Driver for Google's AIY Edge TPU dev board
+ * ASoC Driver for the Coral Edge TPU dev board
  *
  * Author: June Tate-Gans <jtgans@google.com>
  *         Copyright 2018
@@ -113,7 +113,7 @@ static struct snd_soc_ops ops = {
 static struct snd_soc_dai_link card_dai[] = {
 	{
 		.name = "rt5645",
-		.stream_name = "Google AIY Edge TPU HiFi",
+		.stream_name = "Coral Edge TPU HiFi",
 		.codec_dai_name = "rt5645-aif1",
 		.dai_fmt = SND_SOC_DAIFMT_I2S |
 		SND_SOC_DAIFMT_NB_NF |
@@ -254,5 +254,5 @@ static struct platform_driver card_driver = {
 module_platform_driver(card_driver);
 
 MODULE_AUTHOR("June Tate-Gans <jtgans@google.com>");
-MODULE_DESCRIPTION("ASoC Driver for Google AIY Voice Bonnet");
+MODULE_DESCRIPTION("ASoC Driver for Coral Edge TPU");
 MODULE_LICENSE("GPL v2");
