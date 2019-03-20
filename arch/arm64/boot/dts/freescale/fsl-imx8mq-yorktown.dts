@@ -276,49 +276,49 @@
 	power_monitor_m2_a: power_monitor_m2_a@40 {
 		compatible = "ti,ina233";
 		reg = <0x40>;
-		shunt-resistor = <10000>;
+		shunt-resistor = <20000>;
 	};
 
 	power_monitor_m2_b: power_monitor_m2_b@41 {
 		compatible = "ti,ina233";
 		reg = <0x41>;
-		shunt-resistor = <10000>;
+		shunt-resistor = <20000>;
 	};
 
-	power_monitor_m2_c: power_monitor_m2_c@44 {
+	power_monitor_m2_c: power_monitor_m2_c@4e {
 		compatible = "ti,ina233";
-		reg = <0x44>;
-		shunt-resistor = <10000>;
+		reg = <0x4e>;
+		shunt-resistor = <20000>;
 	};
 
 	power_monitor_m2_d: power_monitor_m2_d@45 {
 		compatible = "ti,ina233";
 		reg = <0x45>;
-		shunt-resistor = <10000>;
+		shunt-resistor = <20000>;
 	};
 
 	power_monitor_som: power_monitor_som@48 {
 		compatible = "ti,ina233";
 		reg = <0x48>;
-		shunt-resistor = <10000>;
+		shunt-resistor = <20000>;
 	};
 
 	power_monitor_3P3: power_monitor_3P3@4c {
 		compatible = "ti,ina233";
 		reg = <0x4c>;
-		shunt-resistor = <10000>;
+		shunt-resistor = <20000>;
 	};
 
 	power_monitor_1P8: power_monitor_1P8@4d {
 		compatible = "ti,ina233";
 		reg = <0x4d>;
-		shunt-resistor = <10000>;
+		shunt-resistor = <20000>;
 	};
 
 	power_monitor_5P0: power_monitor_5P04f {
 		compatible = "ti,ina233";
 		reg = <0x4f>;
-		shunt-resistor = <10000>;
+		shunt-resistor = <20000>;
 	};
 
 	i2c-mux@70 {
