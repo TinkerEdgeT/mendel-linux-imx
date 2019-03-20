@@ -26,6 +26,11 @@
 		google,model = "edgetpu-audio-card";
         status = "okay";
 	};
+
+	fan: gpio_fan {
+		gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
 };
 
 

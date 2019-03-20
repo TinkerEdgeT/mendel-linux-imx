@@ -56,6 +56,11 @@
 	busfreq {
 		status = "disabled";
 	};
+
+	fan: gpio_fan {
+		gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
 };
 
 &iomuxc {

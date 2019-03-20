@@ -71,9 +71,9 @@
 
 	fan: gpio_fan {
 		compatible = "gpio-fan";
-		gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
 		gpio-fan,speed-map = <0 0>, <8600 1>;
 		#cooling-cells = <2>;
+		status = "disabled";
 	};
 };
 
