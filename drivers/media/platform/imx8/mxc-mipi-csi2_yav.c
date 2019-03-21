@@ -316,6 +316,16 @@ static int mipi_csi2_s_power(struct v4l2_subdev *sd, int on)
 	return 0;
 }
 
+static int mipi_csi2_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
+{
+	struct mxc_mipi_csi2_dev *csi2dev = sd_to_mxc_mipi_csi2_dev(sd);
+	struct device *dev = &csi2dev->pdev->dev;
+	struct v4l2_subdev *sensor_sd = csi2dev->sensor_sd;
+
+	return v4l2_subdev_call(sensor_sd, core, queryctrl, qc);
+
+}
+
 static int mipi_csi2_s_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct mxc_mipi_csi2_dev *csi2dev = sd_to_mxc_mipi_csi2_dev(sd);
@@ -444,6 +454,7 @@ static struct v4l2_subdev_pad_ops mipi_csi2_pad_ops = {
 
 static struct v4l2_subdev_core_ops mipi_csi2_core_ops = {
 	.s_power = mipi_csi2_s_power,
+	.queryctrl = mipi_csi2_queryctrl,
 };
 
 static struct v4l2_subdev_video_ops mipi_csi2_video_ops = {

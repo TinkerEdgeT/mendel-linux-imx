@@ -1528,6 +1528,14 @@ static int mx6s_vidioc_expbuf(struct file *file, void *priv,
 	return -EINVAL;
 }
 
+static int mx6s_vidioc_queryctrl(struct file *file, void *priv, struct v4l2_queryctrl *qc)
+{
+	struct mx6s_csi_dev *csi_dev = video_drvdata(file);
+	struct v4l2_subdev *sd = csi_dev->sd;
+
+	return v4l2_subdev_call(sd, core, queryctrl, qc);
+}
+
 static int mx6s_vidioc_streamon(struct file *file, void *priv,
 			       enum v4l2_buf_type i)
 {
@@ -1717,6 +1725,7 @@ static const struct v4l2_ioctl_ops mx6s_csi_ioctl_ops = {
 	.vidioc_s_parm        = mx6s_vidioc_s_parm,
 	.vidioc_enum_framesizes = mx6s_vidioc_enum_framesizes,
 	.vidioc_enum_frameintervals = mx6s_vidioc_enum_frameintervals,
+	.vidioc_queryctrl     = mx6s_vidioc_queryctrl,
 };
 
 static int subdev_notifier_bound(struct v4l2_async_notifier *notifier,
