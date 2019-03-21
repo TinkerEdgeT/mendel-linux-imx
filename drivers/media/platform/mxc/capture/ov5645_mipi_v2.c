@@ -3280,6 +3280,11 @@ static int ov5645_enum_framesizes(struct v4l2_subdev *sd,
 	return 0;
 }
 
+static int ov5645_queryctrl(struct v4l2_subdev *sd, struct v4l2_queryctrl *qc)
+{
+	return -EINVAL;
+}
+
 /*!
  * ov5645_enum_frameintervals - V4L2 sensor interface handler for
  *			       VIDIOC_ENUM_FRAMEINTERVALS ioctl
@@ -3391,6 +3396,7 @@ static struct v4l2_subdev_core_ops ov5645_subdev_core_ops = {
 	.g_register	= ov5645_get_register,
 	.s_register	= ov5645_set_register,
 #endif
+	.queryctrl	= ov5645_queryctrl,
 };
 
 static struct v4l2_subdev_ops ov5645_subdev_ops = {
