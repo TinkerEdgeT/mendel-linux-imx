@@ -526,6 +526,21 @@ config PCI_ENDPOINT_TEST
            Enable this configuration option to enable the host side test driver
            for PCI Endpoint.
 
+config TPU_AKIRA
+	tristate "Akira M.2 support"
+	default n
+	depends on I2C
+	depends on GPIOLIB
+	help
+	  Support for the Akira M.2 Card
+
+config YORKTOWN_TPU
+	tristate "Yorktown TPU device"
+	depends on TPU_AKIRA
+	default n
+	help
+	  Driver for managing multiple TPUs on Yorktown.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
