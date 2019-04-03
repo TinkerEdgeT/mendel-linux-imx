@@ -3149,6 +3149,13 @@ static int ov5645_s_parm(struct v4l2_subdev *sd, struct v4l2_streamparm *a)
 			return -EINVAL;
 		}
 
+		// This check is necessary because OpenCV doesn't call G_PARM on the
+		// zeroed structure before setting FPS through S_PARM
+		if ((u32)a->parm.capture.capturemode == 0) {
+			a->parm.capture.capturemode = get_capturemode(ov5645_data.pix.width,
+				ov5645_data.pix.height);
+		}
+
 		orig_mode = ov5645_data.loaded_mode;
 		if ((orig_mode != (u32)a->parm.capture.capturemode) ||
 				(frame_rate != ov5645_data.loaded_fps)) {
