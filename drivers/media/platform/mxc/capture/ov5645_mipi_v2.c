@@ -126,6 +126,7 @@ struct ov5645 {
 	/* Fields to keep track of loaded settings */
 	enum ov5645_frame_rate loaded_fps;
 	enum ov5645_mode loaded_mode;
+	bool initialized;
 };
 
 struct ov5645_res {
@@ -3511,10 +3512,18 @@ static int ov5645_read_af(char *buffer, struct kernel_param *kp)
 	return cnt;
 }
 
+static int ov5645_get_initialized(char *buffer, struct kernel_param *kp)
+{
+	int cnt;
+	cnt = sprintf(buffer, "%d", ov5645_data.initialized ? 1 : 0);
+	return cnt;
+}
+
 module_param_call(ov5645_set_regs, ov5645_set_regs, NULL, NULL, 0644);
 module_param_call(ov5645_print_reg, ov5645_set_print_reg, ov5645_get_print_reg,
 		NULL, 0644);
 module_param_call(ov5645_af, ov5645_set_af_mode, ov5645_read_af, NULL, 0644);
+module_param_call(ov5645_initialized, NULL, ov5645_get_initialized, NULL, 0644);
 
 /*!
  * ov5645 I2C probe function
@@ -3653,6 +3662,7 @@ static int ov5645_probe(struct i2c_client *client,
 
 	OV5645_stream_off();
 	pr_info("camera ov5645_mipi is found\n");
+	ov5645_data.initialized = true;
 	return retval;
 }
 
