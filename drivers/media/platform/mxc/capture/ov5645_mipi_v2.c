@@ -3432,7 +3432,7 @@ static int ov5645_set_regs(const char *buffer, struct kernel_param *kp)
 	if (in_string == NULL)
 		return 0;
 
-	while (true) {
+	while (in_string != NULL) {
 		reg = strsep(&in_string, ",");
 		cnt = sscanf(reg, "%x", &reg_addr);
 		if (cnt != 1)
