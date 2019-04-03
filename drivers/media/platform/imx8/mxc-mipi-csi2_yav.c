@@ -336,6 +336,10 @@ static int mipi_csi2_s_stream(struct v4l2_subdev *sd, int enable)
 	dev_dbg(&csi2dev->pdev->dev, "%s: %d, csi2dev: 0x%x\n",
 		__func__, enable, csi2dev->flags);
 
+	// TOOO: The below code only works for one CSI camera attached. The old
+	// code was broken for OpenCV, and not according to V4L2 spec, both for the
+	// one and two camera cases and this is a temp fix that takes care of the
+	// one camera case See b/128424247
 	if (enable) {
 		if (!csi2dev->running) {
 			pm_runtime_get_sync(dev);
@@ -345,16 +349,13 @@ static int mipi_csi2_s_stream(struct v4l2_subdev *sd, int enable)
 			mxc_mipi_csi2_reg_dump(csi2dev);
 		}
 		v4l2_subdev_call(sensor_sd, video, s_stream, true);
-		csi2dev->running++;
+		csi2dev->running = 1;
 
-	} else {
-
+	} else if (csi2dev->running){
 		v4l2_subdev_call(sensor_sd, video, s_stream, false);
-		csi2dev->running--;
-		if (!csi2dev->running) {
-			pm_runtime_put(dev);
-			mxc_mipi_csi2_disable(csi2dev);
-		}
+		csi2dev->running = 0;
+		pm_runtime_put(dev);
+		mxc_mipi_csi2_disable(csi2dev);
 	}
 
 	return ret;
