@@ -229,7 +229,7 @@ static int ptn5150_setup_i2c_det(
 
 	ret = regmap_update_bits(info->regmap, PTN5150_REG_CONTROL,
 		CONTROL_PORT_STATE_MASK | CONTROL_PORT_INT_MASK,
-		CONTROL_PORT_STATE_UFP | CONTROL_PORT_INT_MASK);
+		CONTROL_PORT_STATE_DRP | CONTROL_PORT_INT_MASK);
 	if (ret) {
 		dev_err(info->dev, "Failed to set port mode: %d", ret);
 		return ret;
