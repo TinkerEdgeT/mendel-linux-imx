@@ -165,6 +165,13 @@
 			>;
 		};
 
+		pinctrl_uart3: uart3grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_UART3_RXD_UART3_DCE_RX		0x49
+				MX8MQ_IOMUXC_UART3_TXD_UART3_DCE_TX		0x49
+			>;
+		};
+
 		pinctrl_usdhc1: usdhc1grp {
 			fsl,pins = <
 				MX8MQ_IOMUXC_SD1_CLK_USDHC1_CLK			0x83
@@ -530,6 +537,14 @@
 	assigned-clock-parents = <&clk IMX8MQ_SYS1_PLL_80M>;
 	fsl,uart-has-rtscts;
 	resets = <&modem_reset>;
+	status = "okay";
+};
+
+&uart3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_uart3>;
+	assigned-clocks = <&clk IMX8MQ_CLK_UART3_SRC>;
+	assigned-clock-parents = <&clk IMX8MQ_CLK_25M>;
 	status = "okay";
 };
 
