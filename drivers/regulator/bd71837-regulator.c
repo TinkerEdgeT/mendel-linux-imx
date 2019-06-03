@@ -101,6 +101,8 @@ static struct regulator_ops bd71837_fixed_regulator_ops = {
 };
 
 static struct regulator_ops bd71837_buck_regulator_ops = {
+	.enable = regulator_enable_regmap,
+	.disable = regulator_disable_regmap,
 	.is_enabled = regulator_is_enabled_regmap,
 	.list_voltage = regulator_list_voltage_linear_range,
 	.set_voltage_sel = regulator_set_voltage_sel_regmap,
@@ -109,6 +111,8 @@ static struct regulator_ops bd71837_buck_regulator_ops = {
 };
 
 static struct regulator_ops bd71837_buck1234_regulator_ops = {
+	.enable = regulator_enable_regmap,
+	.disable = regulator_disable_regmap,
 	.is_enabled = regulator_is_enabled_regmap,
 	.list_voltage = regulator_list_voltage_linear_range,
 	.set_voltage_sel = regulator_set_voltage_sel_regmap,
@@ -234,7 +238,9 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_BUCK1_VOLT_RUN,
 		.vsel_mask = BUCK1_RUN_MASK,
 		.enable_reg = BD71837_REG_BUCK1_CTRL,
-		.enable_mask = BUCK1_SEL|BUCK1_EN,
+		.enable_mask = BUCK1_SEL,
+		.enable_is_inverted = 1,
+		.enable_time  = 500,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -248,7 +254,9 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_BUCK2_VOLT_RUN,
 		.vsel_mask = BUCK2_RUN_MASK,
 		.enable_reg = BD71837_REG_BUCK2_CTRL,
-		.enable_mask = BUCK2_SEL|BUCK2_EN,
+		.enable_mask = BUCK2_SEL,
+		.enable_is_inverted = 1,
+		.enable_time  = 500,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -262,7 +270,9 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_BUCK3_VOLT_RUN,
 		.vsel_mask = BUCK3_RUN_MASK,
 		.enable_reg = BD71837_REG_BUCK3_CTRL,
-		.enable_mask = BUCK3_SEL|BUCK3_EN,
+		.enable_mask = BUCK3_SEL,
+		.enable_is_inverted = 1,
+		.enable_time  = 500,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -276,7 +286,9 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_BUCK4_VOLT_RUN,
 		.vsel_mask = BUCK4_RUN_MASK,
 		.enable_reg = BD71837_REG_BUCK4_CTRL,
-		.enable_mask = BUCK4_SEL|BUCK4_EN,
+		.enable_mask = BUCK4_SEL,
+		.enable_is_inverted = 1,
+		.enable_time  = 500,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -290,7 +302,8 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_BUCK5_VOLT,
 		.vsel_mask = BUCK5_MASK,
 		.enable_reg = BD71837_REG_BUCK5_CTRL,
-		.enable_mask = BUCK5_SEL|BUCK5_EN,
+		.enable_mask = BUCK5_SEL,
+		.enable_is_inverted = 1,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -304,7 +317,8 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_BUCK6_VOLT,
 		.vsel_mask = BUCK6_MASK,
 		.enable_reg = BD71837_REG_BUCK6_CTRL,
-		.enable_mask = BUCK6_SEL|BUCK6_EN,
+		.enable_mask = BUCK6_SEL,
+		.enable_is_inverted = 1,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -318,7 +332,8 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_BUCK7_VOLT,
 		.vsel_mask = BUCK7_MASK,
 		.enable_reg = BD71837_REG_BUCK7_CTRL,
-		.enable_mask = BUCK7_SEL|BUCK7_EN,
+		.enable_mask = BUCK7_SEL,
+		.enable_is_inverted = 1,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -332,7 +347,8 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_BUCK8_VOLT,
 		.vsel_mask = BUCK8_MASK,
 		.enable_reg = BD71837_REG_BUCK8_CTRL,
-		.enable_mask = BUCK8_SEL|BUCK8_EN,
+		.enable_mask = BUCK8_SEL,
+		.enable_is_inverted = 1,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -346,7 +362,8 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_LDO1_VOLT,
 		.vsel_mask = LDO1_MASK,
 		.enable_reg = BD71837_REG_LDO1_VOLT,
-		.enable_mask = LDO1_EN,
+		.enable_mask = LDO1_SEL,
+		.enable_is_inverted = 1,
 		.owner = THIS_MODULE,
 	},
 	/*
@@ -361,7 +378,8 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.n_voltages = BD71837_LDO2_VOLTAGE_NUM,
 		.min_uV = 900000,
 		.enable_reg = BD71837_REG_LDO2_VOLT,
-		.enable_mask = LDO2_EN,
+		.enable_mask = LDO2_SEL,
+		.enable_is_inverted = 1,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -375,7 +393,8 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_LDO3_VOLT,
 		.vsel_mask = LDO3_MASK,
 		.enable_reg = BD71837_REG_LDO3_VOLT,
-		.enable_mask = LDO3_EN,
+		.enable_mask = LDO3_SEL,
+		.enable_is_inverted = 1,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -389,7 +408,8 @@ static const struct regulator_desc bd71837_regulators[] = {
 		.vsel_reg = BD71837_REG_LDO4_VOLT,
 		.vsel_mask = LDO4_MASK,
 		.enable_reg = BD71837_REG_LDO4_VOLT,
-		.enable_mask = LDO4_EN,
+		.enable_mask = LDO4_SEL,
+		.enable_is_inverted = 1,
 		.owner = THIS_MODULE,
 	},
 	{
@@ -699,8 +719,8 @@ static int bd71837_buck1234_dvs_init(struct bd71837_pmic *pmic)
 	u8 reg_run, reg_idle, reg_susp;
 	u8 reg_run_msk, reg_idle_msk, reg_susp_msk;
 
-	for (i = 0; i < BD71837_DVS_BUCK_NUM; i++, buck_dvs++) {
-		switch (i) {
+	for(i = 0; i < BD71837_DVS_BUCK_NUM; i++, buck_dvs++) {
+		switch(i) {
 		case 0:
 		default:
 			reg_run = BD71837_REG_BUCK1_VOLT_RUN;
@@ -731,37 +751,37 @@ static int bd71837_buck1234_dvs_init(struct bd71837_pmic *pmic)
 			break;
 		}
 
-		dev_dbg(pmic->dev, "Buck%d: DVS Run-Idle-Susp[%d - %d - %d].\n", i+1, buck_dvs->voltage[0], buck_dvs->voltage[1], buck_dvs->voltage[2]);
-		if (reg_run > 0) {
+		dev_info(pmic->dev, "Buck%d: DVS Run-Idle-Susp[%d - %d - %d].\n", i+1, buck_dvs->voltage[0], buck_dvs->voltage[1], buck_dvs->voltage[2]);
+		if(reg_run > 0) {
 			selector = regulator_map_voltage_iterate(pmic->rdev[i], buck_dvs->voltage[0], buck_dvs->voltage[0]);
-			if (selector < 0) {
-				dev_dbg(pmic->dev, "%s(): not found selector for Run voltage [%d]\n", __func__, buck_dvs->voltage[0]);
+			if(selector < 0) {
+				dev_err(pmic->dev, "%s(): not found selector for Run voltage [%d]\n", __func__, buck_dvs->voltage[0]);
 			} else {
 				val = (selector & reg_run_msk);
 				ret = bd71837_reg_write(bd71837, reg_run, val);
-				if (ret < 0)
+				if(ret < 0)
 					return ret;
 			}
 		}
-		if (reg_idle > 0) {
+		if(reg_idle > 0) {
 			selector = regulator_map_voltage_iterate(pmic->rdev[i], buck_dvs->voltage[1], buck_dvs->voltage[1]);
-			if (selector < 0) {
-				dev_dbg(pmic->dev, "%s(): not found selector for Idle voltage [%d]\n", __func__, buck_dvs->voltage[1]);
+			if(selector < 0) {
+				dev_err(pmic->dev, "%s(): not found selector for Idle voltage [%d]\n", __func__, buck_dvs->voltage[1]);
 			} else {
 				val = (selector & reg_idle_msk);
 				ret = bd71837_reg_write(bd71837, reg_idle, val);
-				if (ret < 0)
+				if(ret < 0)
 					return ret;
 			}
 		}
-		if (reg_susp > 0) {
+		if(reg_susp > 0) {
 			selector = regulator_map_voltage_iterate(pmic->rdev[i], buck_dvs->voltage[2], buck_dvs->voltage[2]);
-			if (selector < 0) {
-				dev_dbg(pmic->dev, "%s(): not found selector for Susp voltage [%d]\n", __func__, buck_dvs->voltage[2]);
+			if(selector < 0) {
+				dev_err(pmic->dev, "%s(): not found selector for Susp voltage [%d]\n", __func__, buck_dvs->voltage[2]);
 			} else {
 				val = (selector & reg_susp_msk);
 				ret = bd71837_reg_write(bd71837, reg_susp, val);
-				if (ret < 0)
+				if(ret < 0)
 					return ret;
 			}
 		}
@@ -788,25 +808,25 @@ static irqreturn_t bd71837_pmic_interrupt(int irq, void *pwrsys)
 	if (reg < 0)
 		return IRQ_NONE;
 
-	if (reg & IRQ_SWRST) {
+	if(reg & IRQ_SWRST) {
 		bd71837_debug(BD71837_DBG0, "IRQ_SWRST\n");
 	}
-	if (reg & IRQ_PWRON_S) {
+	if(reg & IRQ_PWRON_S) {
 		bd71837_debug(BD71837_DBG0, "IRQ_PWRON_S\n");
 	}
-	if (reg & IRQ_PWRON_L) {
+	if(reg & IRQ_PWRON_L) {
 		bd71837_debug(BD71837_DBG0, "IRQ_PWRON_L\n");
 	}
-	if (reg & IRQ_PWRON) {
+	if(reg & IRQ_PWRON) {
 		bd71837_debug(BD71837_DBG0, "IRQ_PWRON\n");
 	}
-	if (reg & IRQ_WDOG) {
+	if(reg & IRQ_WDOG) {
 		bd71837_debug(BD71837_DBG0, "IRQ_WDOG\n");
 	}
-	if (reg & IRQ_ON_REQ) {
+	if(reg & IRQ_ON_REQ) {
 		bd71837_debug(BD71837_DBG0, "IRQ_ON_REQ\n");
 	}
-	if (reg & IRQ_STBY_REQ) {
+	if(reg & IRQ_STBY_REQ) {
 		bd71837_debug(BD71837_DBG0, "IRQ_STBY_REQ\n");
 	}
 
@@ -861,6 +881,24 @@ static int bd71837_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev, "Failed to write LOCK register(%d)\n", err);
 		goto err;
 	}
+	/* Enable LDO5 */
+	err = bd71837_set_bits(bd71837, BD71837_REG_LDO5_VOLT, LDO5_EN);
+	if (err != 0) {
+		dev_err(&pdev->dev, "Failed to enable LDO5 register(%d)\n", err);
+		goto err;
+	}
+	/* Enable LDO6 */
+	err = bd71837_set_bits(bd71837, BD71837_REG_LDO6_VOLT, LDO6_EN);
+	if (err != 0) {
+		dev_err(&pdev->dev, "Failed to enable LDO6 register(%d)\n", err);
+		goto err;
+	}
+	/* Enable LDO7 */
+	err = bd71837_set_bits(bd71837, BD71837_REG_LDO7_VOLT, LDO7_EN);
+	if (err != 0) {
+		dev_err(&pdev->dev, "Failed to enable LDO7 register(%d)\n", err);
+		goto err;
+	}
 
 	for (i = 0; i < BD71837_REGULATOR_CNT; i++) {
 		struct regulator_init_data *init_data;
@@ -869,19 +907,18 @@ static int bd71837_probe(struct platform_device *pdev)
 
 		desc = &pmic->descs[i];
 		desc->name = bd71837_matches[i].name;
-
+		
 		if (pdata) {
 			init_data = pdata->init_data[i];
 		} else {
-			init_data = bd71837_matches[i].init_data;
+			init_data = matches[i].init_data;
 		}
 
 		config.dev = pmic->dev;
 		config.init_data = init_data;
 		config.driver_data = pmic;
 		config.regmap = bd71837->regmap;
-		if (matches)
-			config.of_node = matches[i].of_node;
+		config.of_node = matches[i].of_node;
 		dev_info(config.dev, "regulator register name '%s'\n", desc->name);
 
 		rdev = regulator_register(desc, &config);
@@ -1003,13 +1040,13 @@ static char procfs_buffer[BD71837_BUF_SIZE];
  * This function is called then the /proc file is read
  *
  */
-static int onetime;
+static int onetime = 0;
 static ssize_t bd71837_proc_read (struct file *file, char __user *buffer, size_t count, loff_t *data)
 {
 	int ret = 0, error = 0;
-	if (onetime == 0) {
+	if(onetime==0) {
 		onetime = 1;
-		memset(procfs_buffer, 0, BD71837_BUF_SIZE);
+		memset( procfs_buffer, 0, BD71837_BUF_SIZE);
 		sprintf(procfs_buffer, "%s", BD71837_REV);
 		ret = strlen(procfs_buffer);
 		error = copy_to_user(buffer, procfs_buffer, strlen(procfs_buffer));
@@ -1017,7 +1054,7 @@ static ssize_t bd71837_proc_read (struct file *file, char __user *buffer, size_t
 		//Clear for next time
 		onetime = 0;
 	}
-	return (error != 0) ? 0 : ret;
+	return (error!=0)?0:ret;
 }
 
 static ssize_t bd71837_proc_write (struct file *file, const char __user *buffer, size_t count, loff_t *data)
