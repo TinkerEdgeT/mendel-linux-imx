@@ -381,7 +381,7 @@ framegen_cfg_videomode(struct dpu_framegen *fg,
 	dpu_fg_write(fg, 0, FGCCR);
 	mutex_unlock(&fg->mutex);
 
-	disp_clock_rate = m->clock * 1000;
+	disp_clock_rate = m->crtc_clock * 1000;
 
 	/*
 	 * To workaround setting clock rate failure issue
