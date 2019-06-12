@@ -244,7 +244,8 @@
 };
 
 &usb_dwc3_0 {
-	extcon = <&typec_ptn5150>;
+	status = "okay";
+	dr_mode = "peripheral";
 };
 
 &i2c3 {
