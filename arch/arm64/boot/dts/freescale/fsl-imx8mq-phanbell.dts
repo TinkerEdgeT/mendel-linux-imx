@@ -50,7 +50,7 @@
 		audio-cpu = <&sai2>;
 		audio-codec = <&rt5645>;
 		google,model = "edgetpu-audio-card";
-        status = "okay";
+		status = "disabled";
 	};
 
 	sound-hdmi {
