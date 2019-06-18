@@ -116,13 +116,13 @@
 &pwm1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm1>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm2>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm3 {
@@ -137,7 +137,7 @@
 	pinctrl-0 = <&pinctrl_ecspi1 &pinctrl_ecspi1_cs>;
 	cs-gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>,
 		   <&gpio3 2 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+	status = "disabled";
 
 	spidev@0 {
 		#address-cells = <1>;
@@ -176,6 +176,8 @@
 				MX8MQ_IOMUXC_ECSPI2_MISO_GPIO5_IO12		0x19
 				MX8MQ_IOMUXC_ECSPI2_SS0_GPIO5_IO13		0x19
 				MX8MQ_IOMUXC_SAI5_RXD0_GPIO3_IO21		0x19
+				MX8MQ_IOMUXC_UART1_TXD_GPIO5_IO23		0x19
+				MX8MQ_IOMUXC_UART1_RXD_GPIO5_IO22		0x19
 			>;
 		};
 
@@ -235,7 +237,7 @@
 &sai1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai1>;
-	status = "okay";
+	status = "disabled";
 };
 
 &sai2 {
@@ -264,7 +266,7 @@
 };
 
 &i2c2 {
-	status = "okay";
+	status = "disabled";
 
 	power_monitor_a: power_monitor_a@40 {
 		compatible = "ti,ina226";
@@ -294,7 +296,7 @@
 };
 
 &i2c3 {
-	status = "okay";
+	status = "disabled";
 
 	rt5645: rt5645@1a {
 		compatible = "realtek,rt5645";
@@ -313,7 +315,7 @@
 };
 
 &i2c2 {
-	status = "okay";
+	status = "disabled";
 
 	ov5645_mipi: ov5645_mipi@3c {
 		compatible = "ovti,ov5645_mipi";
@@ -340,7 +342,7 @@
 &csi1_bridge {
 	fsl,mipi-mode;
 	fsl,two-8bit-sensor-mode;
-	status = "okay";
+	status = "disabled";
 
 	port {
 		csi1_ep: endpoint {
@@ -352,7 +354,7 @@
 &mipi_csi_1 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
+	status = "disabled";
 	port {
 		mipi1_sensor_ep: endpoint1 {
 			remote-endpoint = <&ov5645_mipi1_ep>;
