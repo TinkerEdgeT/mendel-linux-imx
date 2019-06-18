@@ -140,5 +140,12 @@ config EXTCON_PTN5150
 	  Say Y here to enable NXP PTN5150 CC logic for Type-C applications,
 	  this chip can supply the CC flip, attach and detach detection.
 
+config EXTCON_IT5201
+        tristate "ITE IT5201 CC Logic For Type-C Applications"
+        depends on I2C && GPIOLIB
+        select REGMAP_I2C
+        help
+          Say Y here to enable ITE IT5201 CC logic for Type-C applications,
+          this chip can supply the CC flip, attach and detach detection.
 
 endif
