@@ -786,6 +786,13 @@ config PANEL_BOOT_MESSAGE
 	  An empty message will only clear the display at driver init time. Any other
 	  printf()-formatted message is valid with newline and escape codes.
 
+config TINKER_MCU
+	tristate "tinker mcu"
+	default y
+	depends on I2C
+	help
+		Control the power of toshiba tc358762 panel on tinker board.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"

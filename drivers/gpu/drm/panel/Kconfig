@@ -97,4 +97,14 @@ config DRM_PANEL_TIANMA_S6D6FP0A2
 	help
 		Say Y here if you want to enable the Tianma Panel.
 
+config DRM_PANEL_TOSHIBA_TC358762
+	tristate "support for toshiba tc358762 panel"
+	depends on OF && I2C
+	depends on DRM_MIPI_DSI
+	select TINKER_MCU
+	select VIDEOMODE_HELPERS
+	help
+	  Say Y here if you want to enable support for toshiba tc358762 panel.
+	  To compile this driver as a module, choose M here.
+
 endmenu

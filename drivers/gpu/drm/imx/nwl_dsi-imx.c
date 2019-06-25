@@ -913,6 +913,7 @@ static const struct component_ops imx_nwl_dsi_component_ops = {
 	.unbind	= imx_nwl_dsi_unbind,
 };
 
+extern int tinker_mcu_is_connected(void);
 static int imx_nwl_dsi_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -921,6 +922,11 @@ static int imx_nwl_dsi_probe(struct platform_device *pdev)
 	int remote_ports = 0;
 	struct imx_mipi_dsi *dsi;
 	int ret = 0;
+
+	if(!tinker_mcu_is_connected()) {
+		printk("tc358762 panel is not connected, dsi probe stop\n");
+		return -ENODEV;
+	}
 
 	if (!np)
 		return -ENODEV;
