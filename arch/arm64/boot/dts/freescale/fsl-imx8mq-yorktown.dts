@@ -1,0 +1,614 @@
+/*
+ * Copyright 2018 NXP
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ */
+
+#include "fsl-imx8mq-som.dtsi"
+
+/ {
+	model = "Freescale i.MX8MQ Phanbell";
+	compatible = "fsl,imx8mq-phanbell", "fsl,imx8mq";
+
+	sound-rt5645 {
+		compatible = "google,edgetpu-audio-card";
+		model = "edgetpu-audio-card";
+		audio-cpu = <&sai2>;
+		audio-codec = <&rt5645>;
+		google,model = "edgetpu-audio-card";
+        status = "okay";
+	};
+
+	fan: gpio_fan {
+		gpios = <&gpio3 13 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	yorktown-tpu {
+		compatible = "google,yorktown-tpu";
+
+		akira0 {
+			compatible = "google,akira";
+			status = "okay";
+			tpu-gpios = <&akira0 1 GPIO_ACTIVE_HIGH>, // pmic
+			            <&akira0 0 GPIO_ACTIVE_LOW>;   // reset
+		};
+
+		akira1 {
+			compatible = "google,akira";
+			status = "okay";
+			tpu-gpios = <&akira1 1 GPIO_ACTIVE_HIGH>, // pmic
+			            <&akira1 0 GPIO_ACTIVE_LOW>;   // reset
+		};
+
+		akira2 {
+			compatible = "google,akira";
+			status = "okay";
+			tpu-gpios = <&akira2 1 GPIO_ACTIVE_HIGH>, // pmic
+			            <&akira2 0 GPIO_ACTIVE_LOW>;   // reset
+		};
+
+		akira3 {
+			compatible = "google,akira";
+			status = "okay";
+			tpu-gpios = <&akira3 1 GPIO_ACTIVE_HIGH>, // pmic
+			            <&akira3 0 GPIO_ACTIVE_LOW>;   // reset
+		};
+
+		akira4 {
+			compatible = "google,akira";
+			status = "okay";
+			tpu-gpios = <&akira4 1 GPIO_ACTIVE_HIGH>, // pmic
+			            <&akira4 0 GPIO_ACTIVE_LOW>;   // reset
+		};
+
+		akira5 {
+			compatible = "google,akira";
+			status = "okay";
+			tpu-gpios = <&akira5 1 GPIO_ACTIVE_HIGH>, // pmic
+			            <&akira5 0 GPIO_ACTIVE_LOW>;   // reset
+		};
+	
+		akira6 {
+			compatible = "google,akira";
+			status = "okay";
+			tpu-gpios = <&akira6 1 GPIO_ACTIVE_HIGH>, // pmic
+			            <&akira6 0 GPIO_ACTIVE_LOW>;   // reset
+		};
+
+		akira7 {
+			compatible = "google,akira";
+			status = "okay";
+			tpu-gpios = <&akira7 1 GPIO_ACTIVE_HIGH>, // pmic
+			            <&akira7 0 GPIO_ACTIVE_LOW>;   // reset
+		};
+	};
+	
+	akira01_reset: akira01_reset {
+		compatible = "gpio-reset";
+		pinctrl-0 = <&pinctrl_akira01>;
+		pinctrl-names = "default";
+		reset-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <150>;
+		#reset-cells = <0>;
+	};
+
+	akira23_reset: akira23_reset {
+		compatible = "gpio-reset";
+		pinctrl-0 = <&pinctrl_akira23>;
+		pinctrl-names = "default";
+		reset-gpios = <&gpio5 5 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <150>;
+		#reset-cells = <0>;
+	};
+
+	akira45_reset: akira45_reset {
+		compatible = "gpio-reset";
+		pinctrl-0 = <&pinctrl_akira45>;
+		pinctrl-names = "default";
+		reset-gpios = <&gpio2 20 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <150>;
+		#reset-cells = <0>;
+	};
+
+	akira67_reset: akira67_reset {
+		compatible = "gpio-reset";
+		pinctrl-0 = <&pinctrl_akira67>;
+		pinctrl-names = "default";
+		reset-gpios = <&gpio3 9 GPIO_ACTIVE_LOW>;
+		reset-delay-us = <150>;
+		#reset-cells = <0>;
+	};
+};
+
+
+&iomuxc {
+	imx8mq-phanbell {
+		pinctrl_sai2: sai2grp {
+			fsl,pins = <
+					MX8MQ_IOMUXC_SAI2_TXFS_SAI2_TX_SYNC     0xd6
+					MX8MQ_IOMUXC_SAI2_TXC_SAI2_TX_BCLK      0xd6
+					MX8MQ_IOMUXC_SAI2_MCLK_SAI2_MCLK        0xd6
+					MX8MQ_IOMUXC_SAI2_TXD0_SAI2_TX_DATA0    0xd6
+					MX8MQ_IOMUXC_SAI2_RXD0_SAI2_RX_DATA0    0xd6
+					MX8MQ_IOMUXC_SPDIF_RX_GPIO5_IO4         0xd6
+				>;
+		};
+	};
+};
+
+&pwm1 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm1>;
+	status = "okay";
+};
+
+&pwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm2>;
+	status = "okay";
+};
+
+&pwm3 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_pwm3>;
+	status = "okay";
+};
+
+&ecspi1 {
+	fsl,spi-num-chipselects = <2>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_ecspi1 &pinctrl_ecspi1_cs>;
+	cs-gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>,
+		   <&gpio3 2 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+
+	spidev@0 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "rohm,dh2228fv";
+		spi-max-frequency = <20000000>;
+		reg = <0>;
+		status = "okay";
+	};
+	spidev@1 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "rohm,dh2228fv";
+		spi-max-frequency = <20000000>;
+		reg = <1>;
+		status = "okay";
+	};
+
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-1 = <&pinctrl_gpio>;
+
+	imx8mq-phanbell {
+		pinctrl_gpio: gpio_ctrlgrp{
+			fsl,pins = <
+
+				/* 40 Pin Header */
+				MX8MQ_IOMUXC_GPIO1_IO06_GPIO1_IO6		0x19
+				MX8MQ_IOMUXC_GPIO1_IO07_GPIO1_IO7		0x19
+				MX8MQ_IOMUXC_GPIO1_IO08_GPIO1_IO8		0x19
+				MX8MQ_IOMUXC_SAI5_RXD1_GPIO3_IO22		0x19
+				MX8MQ_IOMUXC_SAI5_RXD3_GPIO3_IO24		0x19
+				MX8MQ_IOMUXC_SAI1_RXD0_GPIO4_IO2		0x19
+				MX8MQ_IOMUXC_SAI1_TXFS_GPIO4_IO10		0x19
+				MX8MQ_IOMUXC_SAI1_TXC_GPIO4_IO11		0x19
+				MX8MQ_IOMUXC_SAI1_TXD0_GPIO4_IO12		0x19
+				MX8MQ_IOMUXC_ECSPI2_SCLK_GPIO5_IO10		0x19
+				MX8MQ_IOMUXC_ECSPI2_MISO_GPIO5_IO12		0x19
+				MX8MQ_IOMUXC_ECSPI2_SS0_GPIO5_IO13		0x19
+				MX8MQ_IOMUXC_SAI1_RXD2_GPIO4_IO4		0x19
+				MX8MQ_IOMUXC_SAI1_RXD3_GPIO4_IO5		0x19
+				MX8MQ_IOMUXC_SAI1_RXD2_GPIO4_IO4		0x19
+
+
+				/* 26 Pin Header */
+				MX8MQ_IOMUXC_SAI1_TXD6_GPIO4_IO18		0x19
+				MX8MQ_IOMUXC_SAI1_RXD6_GPIO4_IO8		0x19
+				MX8MQ_IOMUXC_SAI5_RXD2_GPIO3_IO23		0x19
+				MX8MQ_IOMUXC_SAI3_RXFS_GPIO4_IO28		0x19
+				MX8MQ_IOMUXC_SPDIF_TX_GPIO5_IO3			0x19
+				MX8MQ_IOMUXC_SAI1_RXFS_GPIO4_IO0		0x19
+
+				/* Misc */
+				MX8MQ_IOMUXC_NAND_DATA07_GPIO3_IO13		0x19
+
+			>;
+		};
+
+		pinctrl_pwm1: pwm1 {
+			fsl,pins = <
+				MX8MQ_IOMUXC_GPIO1_IO01_PWM1_OUT		0x7f
+			>;
+		};
+
+		pinctrl_pwm2: pwm2 {
+			fsl,pins = <
+				MX8MQ_IOMUXC_GPIO1_IO13_PWM2_OUT		0x7f
+			>;
+		};
+
+		pinctrl_pwm3: pwm3 {
+			fsl,pins = <
+				MX8MQ_IOMUXC_GPIO1_IO14_PWM3_OUT		0x7f
+			>;
+		};
+		pinctrl_ecspi1: ecspi1grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_ECSPI1_SCLK_ECSPI1_SCLK		0x82
+				MX8MQ_IOMUXC_ECSPI1_MOSI_ECSPI1_MOSI		0x82
+				MX8MQ_IOMUXC_ECSPI1_MISO_ECSPI1_MISO		0x82
+			>;
+		};
+		pinctrl_ecspi1_cs: ecspi1_cs_grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_ECSPI1_SS0_GPIO5_IO9		0x82
+				MX8MQ_IOMUXC_NAND_CE1_B_GPIO3_IO2		0x82
+			>;
+		};
+		pinctrl_usb5744: usb5744 {
+			fsl,pins = <
+				MX8MQ_IOMUXC_SAI1_RXC_GPIO4_IO1			0x19
+			>;
+		};
+
+		pinctrl_i2c_mux: pinctrl_mux_grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_NAND_CLE_GPIO3_IO5		0x18
+			>;
+		};
+
+		pinctrl_akira01: pinctrl_akira01_grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_GPIO1_IO10_GPIO1_IO10	0x19
+			>;
+		};
+
+		pinctrl_akira23: pinctrl_akira23_grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_SPDIF_EXT_CLK_GPIO5_IO5	0x19
+			>;
+		};
+
+		pinctrl_akira45: pinctrl_akira45_grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_SD2_WP_GPIO2_IO20	0x19
+			>;
+		};
+
+		pinctrl_akira67: pinctrl_akira67_grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_NAND_DATA03_GPIO3_IO9 0x19
+			>;
+		};
+	};
+};
+
+&hdmi {
+	status = "okay";
+};
+
+// &hdmi_cec {
+// 	status = "okay";
+// };
+
+&dcss {
+	disp-dev = "hdmi_disp";
+	status = "okay";
+};
+
+&sai2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_sai2>;
+	assigned-clocks =
+		<&clk IMX8MQ_CLK_SAI2>;
+	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
+	assigned-clock-rates = <24576000>;
+	status = "okay";
+
+	clocks = <&clk IMX8MQ_CLK_SAI2_IPG>, <&clk IMX8MQ_CLK_DUMMY>,
+		<&clk IMX8MQ_CLK_SAI2_ROOT>, <&clk IMX8MQ_CLK_DUMMY>,
+		<&clk IMX8MQ_CLK_DUMMY>, <&clk IMX8MQ_AUDIO_PLL1_OUT>,
+		<&clk IMX8MQ_AUDIO_PLL2_OUT>;
+	clock-names = "bus", "mclk0", "mclk1", "mclk2", "mclk3", "pll8k", "pll11k";
+};
+
+&i2c2 {
+	status = "okay";
+
+	ov5645_mipi: ov5645_mipi@3c {
+		compatible = "ovti,ov5645_mipi";
+		reg = <0x3c>;
+		status = "okay";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_csi1>;
+		clocks = <&clk IMX8MQ_CLK_DUMMY>;
+		clock-names = "csi_mclk";
+		csi_id = <0>;
+		pwn-gpios = <&gpio3 8 1>;
+		rst-gpios = <&gpio1 12 0>;
+		mclk = <20000000>;
+		mclk_source = <0>;
+		ae_target = <52>;
+		port {
+			ov5645_mipi1_ep: endpoint {
+				remote-endpoint = <&mipi1_sensor_ep>;
+			};
+		};
+	};
+
+	led_driver: ktd2027@30 {
+		compatible = "kinetic,ktd2026";
+		reg = <0x30>;
+		status = "okay";
+	};
+};
+
+&usb_dwc3_0 {
+	extcon = <&typec_ptn5150>;
+};
+
+&i2c3 {
+	status = "okay";
+
+	rt5645: rt5645@1a {
+		compatible = "realtek,rt5645";
+		reg = <0x1a>;
+		clocks = <&clk IMX8MQ_CLK_SAI2_ROOT>;
+		clock-names = "mclk1";
+		status = "okay";
+		realtek,dmic1-data-pin = <2>; // GPIO5
+		realtek,jd-mode = <0>;
+		realtek,jd-invert;
+		realtek,jd-low-volt-enable;
+		interrupt-parent = <&gpio5>;
+		interrupts = <4 IRQ_TYPE_EDGE_BOTH>;
+		hp-detect-gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	typec_ptn5150: ptn5150@3d {
+		compatible = "nxp,ptn5150a";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_typec>;
+		reg = <0x3d>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
+	};
+
+	usb3_hub: usb5744@2d {
+		compatible = "microchip,usb5744";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb5744>;
+		reg = <0x2d>;
+		reset-gpios = <&gpio4 1 GPIO_ACTIVE_LOW>;
+	};
+
+	power_monitor_m2_a: power_monitor_m2_a@40 {
+		compatible = "ti,ina233";
+		reg = <0x40>;
+		shunt-resistor = <20000>;
+	};
+
+	power_monitor_m2_b: power_monitor_m2_b@41 {
+		compatible = "ti,ina233";
+		reg = <0x41>;
+		shunt-resistor = <20000>;
+	};
+
+	power_monitor_m2_c: power_monitor_m2_c@4e {
+		compatible = "ti,ina233";
+		reg = <0x4e>;
+		shunt-resistor = <20000>;
+	};
+
+	power_monitor_m2_d: power_monitor_m2_d@45 {
+		compatible = "ti,ina233";
+		reg = <0x45>;
+		shunt-resistor = <20000>;
+	};
+
+	power_monitor_som: power_monitor_som@48 {
+		compatible = "ti,ina233";
+		reg = <0x48>;
+		shunt-resistor = <20000>;
+	};
+
+	power_monitor_3P3: power_monitor_3P3@4c {
+		compatible = "ti,ina233";
+		reg = <0x4c>;
+		shunt-resistor = <20000>;
+	};
+
+	power_monitor_1P8: power_monitor_1P8@4d {
+		compatible = "ti,ina233";
+		reg = <0x4d>;
+		shunt-resistor = <20000>;
+	};
+
+	power_monitor_5P0: power_monitor_5P04f {
+		compatible = "ti,ina233";
+		reg = <0x4f>;
+		shunt-resistor = <20000>;
+	};
+
+
+	led_driver_1: ktd2027@30 {
+		compatible = "kinetic,ktd2026";
+		reg = <0x30>;
+		status = "okay";
+	};
+
+	led_driver_2: ktd2027@31 {
+		compatible = "kinetic,ktd2026";
+		reg = <0x31>;
+		status = "okay";
+	};
+
+	i2c-mux@70 {
+		compatible = "nxp,pca9544";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		reg = <0x70>;
+		i2c-mux-idle-disconnect;
+		pinctrl-0 = <&pinctrl_i2c_mux>;
+		pinctrl-names = "default";
+
+		interrupt-parent = <&gpio3>;
+		interrupts = <5 IRQ_TYPE_EDGE_FALLING>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+
+		i2c@0 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0>;
+
+			akira0: gpio@43 {
+				compatible = "pericom,pi4io";
+				reg = <0x43>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				resets = <&akira01_reset>;
+			};
+
+			akira1: gpio@44 {
+				compatible = "pericom,pi4io";
+				reg = <0x44>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				resets = <&akira01_reset>;
+			};
+		};
+
+		i2c@1 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <1>;
+
+			akira2: gpio@43 {
+				compatible = "pericom,pi4io";
+				reg = <0x43>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				resets = <&akira23_reset>;
+			};
+
+			akira3: gpio@44 {
+				compatible = "pericom,pi4io";
+				reg = <0x44>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				resets = <&akira23_reset>;
+			};
+		};
+
+		i2c@2 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <2>;
+
+			akira4: gpio@43 {
+				compatible = "pericom,pi4io";
+				reg = <0x43>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				resets = <&akira45_reset>;
+			};
+
+			akira5: gpio@44 {
+				compatible = "pericom,pi4io";
+				reg = <0x44>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				resets = <&akira45_reset>;
+			};
+		};
+
+		i2c@3 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <3>;
+
+			akira6: gpio@43 {
+				compatible = "pericom,pi4io";
+				reg = <0x43>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				resets = <&akira67_reset>;
+			};
+
+			akira7: gpio@44 {
+				compatible = "pericom,pi4io";
+				reg = <0x44>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				resets = <&akira67_reset>;
+			};
+		};
+	};
+};
+
+&gpio3 {
+	i2c-mux {
+		gpio-hog;
+		gpios = <5 GPIO_ACTIVE_LOW>;
+		input;
+	};
+};
+
+&csi1_bridge {
+	fsl,mipi-mode;
+	fsl,two-8bit-sensor-mode;
+	status = "okay";
+
+	port {
+		csi1_ep: endpoint {
+			remote-endpoint = <&csi1_mipi_ep>;
+		};
+	};
+};
+
+&mipi_csi_1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	port {
+		mipi1_sensor_ep: endpoint1 {
+			remote-endpoint = <&ov5645_mipi1_ep>;
+			data-lanes = <1 2>;
+		};
+
+		csi1_mipi_ep: endpoint2 {
+			remote-endpoint = <&csi1_ep>;
+		};
+	};
+};
+
+&iomuxc {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_hog>;
+
+	imx8mq-phanbell {
+		pinctrl_csi1: csi1grp {
+			fsl,pins = <
+				MX8MQ_IOMUXC_NAND_DATA02_GPIO3_IO8			0x19 /* PWDN */
+				MX8MQ_IOMUXC_GPIO1_IO12_GPIO1_IO12			0x19 /* RESETB */
+				/* vsync pin mux? can't find in schematic */
+			>;
+		};
+	};
+};
