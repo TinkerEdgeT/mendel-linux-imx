@@ -60,6 +60,7 @@ obj-$(CONFIG_ASPEED_LPC_SNOOP)	+= aspeed-lpc-snoop.o
 obj-$(CONFIG_PCI_ENDPOINT_TEST)	+= pci_endpoint_test.o
 obj-$(CONFIG_TPU_AKIRA)	+= akira.o
 obj-$(CONFIG_YORKTOWN_TPU)	+= yorktown-tpu.o
+obj-$(CONFIG_TINKER_MCU)	+= tinker_mcu.o
 
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_core.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_bugs.o

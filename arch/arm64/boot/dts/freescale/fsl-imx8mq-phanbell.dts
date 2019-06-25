@@ -225,6 +225,75 @@
 	status = "okay";
 };
 
+&lcdif {
+	status = "okay";
+
+	assigned-clocks = <&clk IMX8MQ_CLK_LCDIF_PIXEL_SRC>,
+			  <&clk IMX8MQ_VIDEO_PLL1_REF_SEL>,
+			  <&clk IMX8MQ_VIDEO_PLL1>;
+	assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>,
+				 <&clk IMX8MQ_CLK_25M>;
+	assigned-clock-rate = <120000000>,
+			      <0>,
+			      <599999999>;
+
+	port@0 {
+		lcdif_mipi_dsi: mipi-dsi-endpoint {
+			remote-endpoint = <&mipi_dsi_in>;
+		};
+	};
+};
+
+&mipi_dsi_phy {
+	status = "okay";
+};
+
+&mipi_dsi {
+	status = "okay";
+	as_bridge;
+	sync-pol = <1>;
+	assigned-clocks = <&clk IMX8MQ_CLK_DSI_PHY_REF_SRC>,
+			  <&clk IMX8MQ_CLK_DSI_CORE_SRC>,
+			  <&clk IMX8MQ_VIDEO_PLL1_REF_SEL>,
+			  <&clk IMX8MQ_VIDEO_PLL1>;
+	assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>,
+				 <&clk IMX8MQ_SYS1_PLL_266M>,
+				 <&clk IMX8MQ_CLK_25M>;
+	assigned-clock-rates = <24000000>,
+			       <266000000>,
+			       <0>,
+			       <599999999>;
+
+	port@1 {
+		mipi_dsi_in: endpoint {
+			remote-endpoint = <&lcdif_mipi_dsi>;
+		};
+	};
+};
+
+&mipi_dsi_bridge {
+	status = "okay";
+
+	panel@0 {
+		compatible = "asus,tc358762";
+		reg = <0>;
+		dsi-lanes = <1>;
+		panel-width-mm = <68>;
+		panel-height-mm = <121>;
+		port {
+			panel1_in: endpoint {
+				remote-endpoint = <&mipi_dsi_bridge_out>;
+			};
+		};
+	};
+
+	port@1 {
+		mipi_dsi_bridge_out: endpoint {
+			remote-endpoint = <&panel1_in>;
+		};
+	};
+};
+
 &sai1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai1>;
@@ -251,6 +320,11 @@
 
 &i2c2 {
 	status = "okay";
+
+	tinker_mcu: tinker_mcu@45 {
+		compatible = "tinker_mcu";
+		reg = <0x45>;
+	};
 
 	power_monitor_a: power_monitor_a@40 {
 		compatible = "ti,ina226";

@@ -503,12 +503,18 @@ static const struct of_device_id mxsfb_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, mxsfb_dt_ids);
 
+extern int tinker_mcu_is_connected(void);
 static int mxsfb_probe(struct platform_device *pdev)
 {
 	struct drm_device *drm;
 	const struct of_device_id *of_id =
 			of_match_device(mxsfb_dt_ids, &pdev->dev);
 	int ret;
+
+	if(!tinker_mcu_is_connected()) {
+		printk("tc358762 panel is not connected, lcdif probe stop\n");
+		return -ENODEV;
+	}
 
 	if (!pdev->dev.of_node)
 		return -ENODEV;

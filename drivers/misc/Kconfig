@@ -541,6 +541,13 @@ config YORKTOWN_TPU
 	help
 	  Driver for managing multiple TPUs on Yorktown.
 
+config TINKER_MCU
+	tristate "tinker mcu"
+	default y
+	depends on I2C
+	help
+		Control the power of toshiba tc358762 panel on tinker board.
+
 source "drivers/misc/c2port/Kconfig"
 source "drivers/misc/eeprom/Kconfig"
 source "drivers/misc/cb710/Kconfig"
