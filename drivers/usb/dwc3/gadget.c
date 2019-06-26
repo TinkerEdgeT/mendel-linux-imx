@@ -2666,7 +2666,9 @@ static void dwc3_gadget_disconnect_interrupt(struct dwc3 *dwc)
 	usb_gadget_set_state(&dwc->gadget, USB_STATE_NOTATTACHED);
 
 	if (dwc->connected) {
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 		release_bus_freq(BUS_FREQ_HIGH);
+#endif
 		dwc->connected = false;
 	}
 }
@@ -2676,7 +2678,9 @@ static void dwc3_gadget_reset_interrupt(struct dwc3 *dwc)
 	u32			reg;
 
 	if (!dwc->connected) {
+#if !defined(CONFIG_IMX8MQ_PHANBELL_POWERSAVE)
 		request_bus_freq(BUS_FREQ_HIGH);
+#endif
 		dwc->connected = true;
 	}
 

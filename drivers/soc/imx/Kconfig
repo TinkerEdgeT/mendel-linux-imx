@@ -52,4 +52,10 @@ config HAVE_IMX_RPMSG
 	select RPMSG_VIRTIO
 	select RPMSG
 	bool
+
+config IMX8MQ_PHANBELL_POWERSAVE
+	bool "IMX8MQ Phanbell Power Optimizations"
+	---help---
+	  This config modifies iMX code specifically for Phanbell power
+	  optimization.
 endmenu
