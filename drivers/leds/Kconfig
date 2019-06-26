@@ -584,6 +584,14 @@ config LEDS_LM355x
 	  This option enables support for LEDs connected to LM355x.
 	  LM355x includes Torch, Flash and Indicator functions.
 
+config LEDS_KTD202X
+	tristate "LED support for KTD202x Chips"
+	depends on LEDS_CLASS && I2C
+	select REGMAP_I2C
+	help
+	  This option enables support for LEDs connected to the KTD202x
+	  chip.
+
 config LEDS_OT200
 	tristate "LED support for the Bachmann OT200"
 	depends on LEDS_CLASS && HAS_IOMEM && (X86_32 || COMPILE_TEST)

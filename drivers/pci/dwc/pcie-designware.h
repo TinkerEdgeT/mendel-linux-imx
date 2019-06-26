@@ -107,10 +107,9 @@
 
 /*
  * Maximum number of MSI IRQs can be 256 per controller. But keep
- * it 32 as of now. Probably we will never need more than 32. If needed,
- * then increment it in multiple of 32.
+ * it 128 as of now. If needed, then increment it in multiple of 32.
  */
-#define MAX_MSI_IRQS			32
+#define MAX_MSI_IRQS			128
 #define MAX_MSI_CTRLS			(MAX_MSI_IRQS / 32)
 
 struct pcie_port;
