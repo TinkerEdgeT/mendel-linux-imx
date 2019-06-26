@@ -527,7 +527,7 @@
 	pinctrl-0 = <&pinctrl_uart1>;
 	assigned-clocks = <&clk IMX8MQ_CLK_UART1_SRC>;
 	assigned-clock-parents = <&clk IMX8MQ_CLK_25M>;
-	status = "disabled";
+	status = "okay";
 };
 
 &uart2 { /* BT */
