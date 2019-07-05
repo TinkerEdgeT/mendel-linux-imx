@@ -294,7 +294,7 @@
 };
 
 &i2c3 {
-	status = "disabled";
+	status = "okay";
 
 	rt5645: rt5645@1a {
 		compatible = "realtek,rt5645";
@@ -309,6 +309,11 @@
 		interrupt-parent = <&gpio5>;
 		interrupts = <4 IRQ_TYPE_EDGE_BOTH>;
 		hp-detect-gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
+	};
+
+	m24c08@50 {
+		compatible = "at,24c08";
+		reg = <0x50>;
 	};
 };
 
