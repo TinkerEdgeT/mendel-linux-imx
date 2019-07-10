@@ -1773,6 +1773,26 @@ static void fec_get_mac(struct net_device *ndev)
 }
 
 /* ------------------------------------------------------------------------- */
+/*
+ * Set PHY LED configuration
+ */
+void set_led_configuration(struct phy_device *phy_dev) {
+
+	// To switch Page0xd04
+	phy_write(phy_dev, 31, 0x0d04);
+
+	//Disable EEELCR mode
+	phy_write(phy_dev, 17, 0x0000);
+
+	printk("%s: #### before setting led, Reg16 = 0x%x\n", __func__, phy_read(phy_dev, 16));
+
+	phy_write(phy_dev, 16, 0xC102);
+
+	printk("%s: #### after setting led, Reg16 = 0x%x\n", __func__, phy_read(phy_dev, 16));
+
+	//switch to Page0
+	phy_write(phy_dev, 31, 0x0000);
+}
 
 /*
  * Phy section
@@ -1782,6 +1802,8 @@ static void fec_enet_adjust_link(struct net_device *ndev)
 	struct fec_enet_private *fep = netdev_priv(ndev);
 	struct phy_device *phy_dev = ndev->phydev;
 	int status_change = 0;
+
+	set_led_configuration(phy_dev);
 
 	/* Prevent a state halted on mii error */
 	if (fep->mii_timeout && phy_dev->state == PHY_HALTED) {
