@@ -46,6 +46,13 @@
 #define set_la_valid F_LOG_ADDR_VALID0
 #define get_la_valid F_LOG_ADDR_VALID0_RD
 
+static struct imx_cec_dev *imx_cec;
+
+struct cec_adapter *cec_get_addapter(void)
+{
+   return imx_cec->adap;
+}
+
 u32 cec_read(void __iomem *base, u32 reg)
 {
 	return readl(base + (reg << 2));
@@ -275,6 +282,7 @@ static int imx_cec_probe(struct platform_device *pdev)
 	int ret;
 
 	cec = devm_kzalloc(&pdev->dev, sizeof(*cec), GFP_KERNEL);
+	imx_cec = cec;
 	if (!cec)
 		return -ENOMEM;
 
@@ -323,6 +331,9 @@ static int imx_cec_remove(struct platform_device *pdev)
 		cec->cec_worker = NULL;
 	}
 	cec_unregister_adapter(cec->adap);
+	if (imx_cec) {
+		imx_cec = NULL;
+	}
 	return 0;
 }
 

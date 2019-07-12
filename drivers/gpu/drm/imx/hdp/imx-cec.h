@@ -333,4 +333,5 @@ struct imx_cec_dev {
 	struct task_struct *cec_worker;
 };
 
+struct cec_adapter *cec_get_addapter(void);
 #endif

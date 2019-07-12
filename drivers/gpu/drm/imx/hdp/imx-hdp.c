@@ -20,11 +20,14 @@
 #include <linux/of.h>
 #include <linux/irq.h>
 #include <linux/of_device.h>
+#include <media/cec.h>
+#include <media/cec-edid.h>
 
 #include "imx-hdp.h"
 #include "imx-hdmi.h"
 #include "imx-dp.h"
 #include "../imx-drm.h"
+#include "imx-cec.h"
 
 struct drm_display_mode *g_mode;
 
@@ -578,10 +581,13 @@ static int imx_hdp_connector_get_modes(struct drm_connector *connector)
 	int num_modes = 0;
 	int ret;
 	int i;
+	u16 pa = CEC_PHYS_ADDR_INVALID;
+	struct cec_adapter *adap;
 
 	if (hdp->is_edid == true) {
 		edid = drm_do_get_edid(connector, hdp->ops->get_edid_block, &hdp->state);
 		if (edid) {
+			pa = cec_get_edid_phys_addr((const u8 *)edid,EDID_LENGTH * (edid->extensions + 1), NULL);
 			dev_dbg(hdp->dev, "%x,%x,%x,%x,%x,%x,%x,%x\n",
 					edid->header[0], edid->header[1], edid->header[2], edid->header[3],
 					edid->header[4], edid->header[5], edid->header[6], edid->header[7]);
@@ -590,8 +596,11 @@ static int imx_hdp_connector_get_modes(struct drm_connector *connector)
 			/* Store the ELD */
 			drm_edid_to_eld(connector, edid);
 			kfree(edid);
+		} else {
+			pa = CEC_PHYS_ADDR_INVALID;
 		}
 	} else {
+		pa = CEC_PHYS_ADDR_INVALID;
 		dev_dbg(hdp->dev, "failed to get edid\n");
 		for (i = 0; i < ARRAY_SIZE(edid_cea_modes); i++) {
 			mode = drm_mode_create(connector->dev);
@@ -602,6 +611,13 @@ static int imx_hdp_connector_get_modes(struct drm_connector *connector)
 			drm_mode_probed_add(connector, mode);
 		}
 		num_modes = i;
+	}
+	DRM_INFO("HDMI/DP physical address: %x.%x.%x.%x\n",cec_phys_addr_exp(pa));
+	adap = cec_get_addapter();
+	if(PTR_ERR_OR_ZERO(adap)) {
+		DRM_INFO("Get cec adapter fail!\n");
+	} else {
+		cec_s_phys_addr(adap, pa, false);
 	}
 
 	return num_modes;
