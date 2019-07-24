@@ -125,10 +125,10 @@
 	status = "disabled";
 };
 
-&pwm3 {
+&pwm4 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm3>;
-	status = "okay";
+	pinctrl-0 = <&pinctrl_pwm4>;
+	status = "disabled";
 };
 
 &ecspi1 {
@@ -191,9 +191,9 @@
 			>;
 		};
 
-		pinctrl_pwm3: pwm3 {
+		pinctrl_pwm4: pwm4 {
 			fsl,pins = <
-				MX8MQ_IOMUXC_GPIO1_IO14_PWM3_OUT		0x7f
+				MX8MQ_IOMUXC_SAI3_MCLK_PWM4_OUT			0x7f
 			>;
 		};
 		pinctrl_ecspi1: ecspi1grp {
