@@ -298,7 +298,7 @@ static int imx_cec_probe(struct platform_device *pdev)
 
 	cec->adap = cec_allocate_adapter(&imx_cec_adap_ops, cec,
 					 CEC_NAME,
-					 CEC_CAP_PHYS_ADDR | CEC_CAP_LOG_ADDRS |
+					 CEC_CAP_LOG_ADDRS |
 					 CEC_CAP_TRANSMIT | CEC_CAP_PASSTHROUGH
 					 | CEC_CAP_RC, 1, &pdev->dev);
 	ret = PTR_ERR_OR_ZERO(cec->adap);

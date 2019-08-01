@@ -990,6 +990,8 @@ static void hotplug_work_func(struct work_struct *work)
 	struct imx_hdp *hdp = container_of(work, struct imx_hdp,
 								hotplug_work.work);
 	struct drm_connector *connector = &hdp->connector;
+	u16 pa = CEC_PHYS_ADDR_INVALID;
+	struct cec_adapter *adap;
 
 	drm_helper_hpd_irq_event(connector->dev);
 
@@ -1000,6 +1002,12 @@ static void hotplug_work_func(struct work_struct *work)
 	} else if (connector->status == connector_status_disconnected) {
 		/* Cable Disconnedted  */
 		DRM_INFO("HDMI/DP Cable Plug Out\n");
+		adap = cec_get_addapter();
+		if(PTR_ERR_OR_ZERO(adap)) {
+			DRM_INFO("Get cec adapter fail!\n");
+		} else {
+			cec_s_phys_addr(adap, pa, false);
+		}
 		enable_irq(hdp->irq[HPD_IRQ_IN]);
 	}
 }
