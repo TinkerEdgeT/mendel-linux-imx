@@ -87,6 +87,13 @@
 			linux,default-trigger="none";
 		};
 	};
+
+	hwid: gpio-hwid {
+		compatible = "gpio-hwid";
+		id0-gpios = <&gpio3 25 GPIO_ACTIVE_HIGH>;
+		id1-gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
+		id2-gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
+	};
 };
 
 &iomuxc {
