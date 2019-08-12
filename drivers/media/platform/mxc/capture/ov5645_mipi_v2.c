@@ -139,6 +139,7 @@ struct ov5645_res {
  */
 static struct ov5645 ov5645_data;
 static int pwn_gpio, rst_gpio;
+static int chip_id;
 
 struct ov5645_res ov5645_valid_res[] = {
 	[0] = {640, 480},
@@ -3532,6 +3533,11 @@ module_param_call(ov5645_print_reg, ov5645_set_print_reg, ov5645_get_print_reg,
 module_param_call(ov5645_af, ov5645_set_af_mode, ov5645_read_af, NULL, 0644);
 module_param_call(ov5645_initialized, NULL, ov5645_get_initialized, NULL, 0644);
 
+static ssize_t id_show(struct device_driver *driver, char *buf){
+	return sprintf(buf, "%d", chip_id);
+}
+static DRIVER_ATTR(chipId, S_IRUGO, id_show, NULL);
+
 /*!
  * ov5645 I2C probe function
  *
@@ -3651,6 +3657,8 @@ static int ov5645_probe(struct i2c_client *client,
 		return -ENODEV;
 	}
 
+	chip_id = 5645;
+
 	retval = init_device();
 	if (retval < 0) {
 		clk_disable_unprepare(ov5645_data.sensor_clk);
@@ -3668,6 +3676,9 @@ static int ov5645_probe(struct i2c_client *client,
 					"%s--Async register failed, ret=%d\n", __func__, retval);
 
 	OV5645_stream_off();
+
+	driver_create_file(dev->driver, &driver_attr_chipId);
+
 	pr_info("camera ov5645_mipi is found\n");
 	ov5645_data.initialized = true;
 	return retval;
