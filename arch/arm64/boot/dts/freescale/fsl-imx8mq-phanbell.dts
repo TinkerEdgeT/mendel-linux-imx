@@ -465,10 +465,10 @@
 &i2c3 {
 	status = "okay";
 
-	ov5645_mipi2: ov5645_mipi@3c {
-		compatible = "ovti,ov5645_mipi";
+	ov5645_mipi2: ov5645b_mipi@3c {
+		compatible = "ovti,ov5645b_mipi";
 		reg = <0x3c>;
-		status = "disabled";
+		status = "okay";
 		pinctrl-names = "default";
 		pinctrl-0 = <&pinctrl_csi2>;
 		clocks = <&clk IMX8MQ_CLK_DUMMY>;
@@ -490,7 +490,7 @@
 &csi2_bridge {
 	fsl,mipi-mode;
 	fsl,two-8bit-sensor-mode;
-	status = "disabled";
+	status = "okay";
 
 	port {
 		csi2_ep: endpoint {
@@ -502,7 +502,7 @@
 &mipi_csi_2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "disabled";
+	status = "okay";
 	port {
 		mipi2_sensor_ep: endpoint1 {
 			remote-endpoint = <&ov5645_mipi2_ep>;
