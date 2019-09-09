@@ -1,5 +1,0 @@
-config HWID
-	tristate "tinker HWID"
-	default y
-	help
-	  Driver to set HWID.

@@ -206,6 +206,6 @@ source "drivers/fpga/Kconfig"
 
 source "drivers/tee/Kconfig"
 
-source "drivers/hwid/Kconfig"
+source "drivers/boardinfo/Kconfig"
 
 endmenu

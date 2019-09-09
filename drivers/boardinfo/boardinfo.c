@@ -3,7 +3,9 @@
 #include <linux/gpio.h>
 #include <linux/of_platform.h>
 #include <linux/of_gpio.h>
+#include <linux/proc_fs.h>
 
+static char *boardinfo;
 static int id0_gpio, id1_gpio, id2_gpio;
 
 static const struct of_device_id of_gpio_hwid_match[] = {
@@ -12,12 +14,17 @@ static const struct of_device_id of_gpio_hwid_match[] = {
 };
 MODULE_DEVICE_TABLE(of, of_gpio_hwid_match);
 
-static ssize_t hwid_show(struct device *dev,
-		struct device_attribute *attr,
-		char *buf)
+static int info_show(struct seq_file *m, void *v)
+{
+	seq_printf(m, "%s\n", boardinfo);
+	return 0;
+}
+
+static int ver_show(struct seq_file *m, void *v)
 {
 	int id0, id1, id2;
 	int hwid;
+	char *boardver;
 
 	id0 = gpio_get_value(id0_gpio);
 	id1 = gpio_get_value(id1_gpio);
@@ -25,15 +32,54 @@ static ssize_t hwid_show(struct device *dev,
 
 	hwid = (id2 << 2) + (id1 << 1) + id0;
 
-	return sprintf(buf, "%d\n", hwid);
+	switch (hwid) {
+		case 0:
+			boardver = "1.00";
+			break;
+		case 1:
+			boardver = "1.01";
+			break;
+		case 2:
+			boardver = "1.02";
+			break;
+		default:
+			boardver = "unknown";
+			break;
+	}
+
+	seq_printf(m, "%s\n", boardver);
+	return 0;
 }
 
-static DEVICE_ATTR(HWID, S_IRUGO, hwid_show, NULL);
+static int info_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, info_show, NULL);
+}
+
+static int ver_open(struct inode *inode, struct file *file)
+{
+	return single_open(file, ver_show, NULL);
+}
+
+static struct file_operations boardinfo_ops = {
+	.owner	= THIS_MODULE,
+	.open	= info_open,
+	.read	= seq_read,
+};
+
+static struct file_operations boardver_ops = {
+	.owner	= THIS_MODULE,
+	.open	= ver_open,
+	.read	= seq_read,
+};
 
 static int gpio_hwid_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	int ret;
+	struct proc_dir_entry* file;
+
+	boardinfo = "Tinker Edge T";
 
 	id0_gpio = of_get_named_gpio(dev->of_node, "id0-gpios", 0);
 	if (!gpio_is_valid(id0_gpio)) {
@@ -71,12 +117,15 @@ static int gpio_hwid_probe(struct platform_device *pdev)
 		}
 	}
 
-	ret = device_create_file(dev, &dev_attr_HWID);
-	if (ret) {
-		printk("Cannot create HWID attribute\n");
-		device_remove_file(dev, &dev_attr_HWID);
-		return -ENODEV;
-	}
+	printk("boardinfo = %s\n", boardinfo);
+
+	file = proc_create("boardinfo", 0444, NULL, &boardinfo_ops);
+	if (!file)
+		return -ENOMEM;
+
+	file = proc_create("boardver", 0444, NULL, &boardver_ops);
+	if (!file)
+		return -ENOMEM;
 
 	return 0;
 }
@@ -90,15 +139,15 @@ static int gpio_hwid_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static struct platform_driver gpio_hwid_driver = {
+static struct platform_driver boardinfo_driver = {
 	.probe		= gpio_hwid_probe,
 	.remove		= gpio_hwid_remove,
 	.driver = {
-		.name	= "gpio-hwid",
+		.name	= "boardinfo",
 #ifdef CONFIG_OF_GPIO
 		.of_match_table = of_match_ptr(of_gpio_hwid_match),
 #endif
 	},
 };
 
-module_platform_driver(gpio_hwid_driver);
+module_platform_driver(boardinfo_driver);
