@@ -338,7 +338,8 @@ static int hantro_thermal_hot_notify(struct notifier_block *nb, unsigned long ev
 	spin_lock_irqsave(&thermal_lock, flags);
 	thermal_event = event;		/*event: 1: hot, 0: cool*/
 	spin_unlock_irqrestore(&thermal_lock, flags);
-	pr_info("hantro receive hot notification event: %ld\n", event);
+	if (hantro_dynamic_clock)
+		pr_info("hantro receive hot notification event: %ld\n", event);
 
 	return NOTIFY_OK;
 }
