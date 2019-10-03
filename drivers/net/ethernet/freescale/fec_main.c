@@ -2211,6 +2211,17 @@ static void fec_enet_mii_remove(struct fec_enet_private *fep)
 	}
 }
 
+void set_wakeup_enable(int wakeup_enable, struct net_device *ndev)
+{
+        struct fec_enet_private *fep = netdev_priv(ndev);
+
+        device_set_wakeup_enable(&ndev->dev, wakeup_enable);
+        if (device_may_wakeup(&ndev->dev))
+                fep->wol_flag |= FEC_WOL_FLAG_ENABLE;
+        else
+                fep->wol_flag &= (~FEC_WOL_FLAG_ENABLE);
+}
+
 static void fec_enet_get_drvinfo(struct net_device *ndev,
 				 struct ethtool_drvinfo *info)
 {
@@ -3850,6 +3861,17 @@ fec_probe(struct platform_device *pdev)
 
 	pm_runtime_mark_last_busy(&pdev->dev);
 	pm_runtime_put_autosuspend(&pdev->dev);
+
+	/* enable wake on lan */
+        const char *wakeup_enable;
+        if (of_property_read_string(np, "wakeup-enable", &wakeup_enable)) {
+		printk("[WOL]Fail to read wakeup-enable");
+		return -ENODEV;
+        } else {
+                printk("[WOL]wakeup_enable = %s", wakeup_enable);
+		if (!strcmp(wakeup_enable, "1"))
+			set_wakeup_enable(1, ndev);
+	}
 
 	return 0;
 
