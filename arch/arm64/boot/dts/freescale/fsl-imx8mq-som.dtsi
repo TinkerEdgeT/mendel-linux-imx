@@ -346,6 +346,7 @@
 	phy-mode = "rgmii-id";
 	phy-handle = <&ethphy0>;
 	fsl,magic-packet;
+	wakeup-enable = "0";
 	status = "okay";
 
 	mdio {
