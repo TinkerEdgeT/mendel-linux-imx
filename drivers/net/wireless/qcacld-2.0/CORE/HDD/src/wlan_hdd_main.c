@@ -18106,15 +18106,20 @@ static int fwpath_changed_handler(const char *kmessage,
 		strlcpy(fwpath_mode_local, kmessage,
 			sizeof(fwpath_mode_local));
 
+		pr_info("%s : fwpath_mode_local : %s\n", __func__, fwpath_mode_local);
+
 		ready = vos_is_load_unload_ready(__func__);
 
+		pr_info("%s : vos_is_load_unload_ready, ready = %d\n", __func__, ready);
 		if (!ready) {
 			VOS_ASSERT(0);
 			return -EINVAL;
 		}
-
+		pr_info("%s : before vos_load_unload_protect\n", __func__);
 		vos_load_unload_protect(__func__);
+		pr_info("%s : after vos_load_unload_protect\n", __func__);
 		ret = kickstart_driver(true, mode_change);
+		pr_info("%s : after kickstart_driver\n", __func__);
 		vos_load_unload_unprotect(__func__);
 	}
 
