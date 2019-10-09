@@ -102,10 +102,42 @@ static void ion_cma_free(struct ion_buffer *buffer)
 	kfree(buffer->sg_table);
 }
 
+int ion_cma_map_user(struct ion_heap *heap, struct ion_buffer *buffer,
+		      struct vm_area_struct *vma)
+{
+	struct page *pages = buffer->priv_virt;
+	unsigned long nr_pages = PAGE_ALIGN(buffer->size) >> PAGE_SHIFT;
+	unsigned long start = page_to_pfn(pages);
+	unsigned long end = start + nr_pages;
+	unsigned long pfn = start + vma->vm_pgoff;
+	unsigned long addr = vma->vm_start;
+	int ret;
+
+	/* VM_DONTEXPAND Disable vma merging and expanding with mremap()
+	 * VM_DONTDUMP Omit vma from core dump
+	 */
+	vma->vm_flags |= VM_DONTEXPAND | VM_DONTDUMP;
+
+	while (pfn < end) {
+		struct page *page = pfn_to_page(pfn);
+		ret = vm_insert_page(vma, addr, page);
+		if (ret)
+			return ret;
+
+		pfn++;
+		addr += PAGE_SIZE;
+		if (addr >= vma->vm_end) {
+			break;
+		}
+	}
+
+	return 0;
+}
+
 static struct ion_heap_ops ion_cma_ops = {
 	.allocate = ion_cma_allocate,
 	.free = ion_cma_free,
-	.map_user = ion_heap_map_user,
+	.map_user = ion_cma_map_user,
 	.map_kernel = ion_heap_map_kernel,
 	.unmap_kernel = ion_heap_unmap_kernel,
 };
