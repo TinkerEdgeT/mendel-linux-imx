@@ -301,6 +301,7 @@ static int xhci_plat_probe(struct platform_device *pdev)
 	if (ret)
 		goto dealloc_usb2_hcd;
 
+	device_set_wakeup_capable(&pdev->dev, true);
 	device_enable_async_suspend(&pdev->dev);
 	pm_runtime_put_noidle(&pdev->dev);
 
@@ -364,7 +365,7 @@ static int __maybe_unused xhci_plat_suspend(struct device *dev)
 {
 	struct usb_hcd	*hcd = dev_get_drvdata(dev);
 	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
-
+#if 0
 	/*
 	 * xhci_suspend() needs `do_wakeup` to know whether host is allowed
 	 * to do wakeup during suspend. Since xhci_plat_suspend is currently
@@ -374,6 +375,11 @@ static int __maybe_unused xhci_plat_suspend(struct device *dev)
 	 * also applies to runtime suspend.
 	 */
 	return xhci_suspend(xhci, device_may_wakeup(dev));
+#endif
+	if (device_may_wakeup(dev))
+		enable_irq_wake(hcd->irq);
+
+	return 0;
 }
 
 static int __maybe_unused xhci_plat_resume(struct device *dev)
@@ -382,11 +388,17 @@ static int __maybe_unused xhci_plat_resume(struct device *dev)
 	struct xhci_hcd	*xhci = hcd_to_xhci(hcd);
 	int ret;
 
+#if 0
 	ret = xhci_priv_resume_quirk(hcd);
 	if (ret)
 		return ret;
 
 	return xhci_resume(xhci, 0);
+#endif
+	if (device_may_wakeup(dev))
+		disable_irq_wake(hcd->irq);
+
+	return 0;
 }
 
 static int __maybe_unused xhci_plat_runtime_suspend(struct device *dev)

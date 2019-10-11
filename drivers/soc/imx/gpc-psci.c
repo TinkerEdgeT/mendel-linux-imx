@@ -52,6 +52,9 @@ enum imx_gpc_pm_domain_state {
 static DEFINE_SPINLOCK(gpc_psci_lock);
 static DEFINE_MUTEX(gpc_pd_mutex);
 
+/* USB1 port power domain */
+static bool usb1_on = false;
+
 static void imx_gpc_psci_irq_unmask(struct irq_data *d)
 {
 	struct arm_smccc_res res;
@@ -202,6 +205,9 @@ static int imx_gpc_pd_power_on(struct generic_pm_domain *domain)
 	struct arm_smccc_res res;
 	int index, ret = 0;
 
+	if (usb1_on && pd->gpc_domain_id == 3)
+		return 0;
+
 	/* power on the external supply */
 	if (pd->reg) {
 		ret = regulator_enable(pd->reg);
@@ -222,6 +228,9 @@ static int imx_gpc_pd_power_on(struct generic_pm_domain *domain)
 		      GPC_PD_STATE_ON, 0, 0, 0, 0, &res);
 	mutex_unlock(&gpc_pd_mutex);
 
+	if (pd->gpc_domain_id == 3)
+		usb1_on = true;
+
 	return 0;
 }
 
@@ -230,6 +239,9 @@ static int imx_gpc_pd_power_off(struct generic_pm_domain *domain)
 	struct imx_gpc_pm_domain *pd = to_imx_gpc_pm_domain(domain);
 	struct arm_smccc_res res;
 	int index, ret = 0;
+
+	if (pd->gpc_domain_id == 3)
+		return 0;
 
 	mutex_lock(&gpc_pd_mutex);
 	arm_smccc_smc(FSL_SIP_GPC, FSL_SIP_CONFIG_GPC_PM_DOMAIN, pd->gpc_domain_id,
