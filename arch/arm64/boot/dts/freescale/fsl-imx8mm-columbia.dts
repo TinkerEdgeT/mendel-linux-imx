@@ -89,60 +89,6 @@
 		};
 	};
 
-	wm8524: wm8524 {
-		compatible = "wlf,wm8524";
-		clocks = <&clk IMX8MM_CLK_SAI3_ROOT>;
-		clock-names = "mclk";
-		wlf,mute-gpios = <&gpio5 21 GPIO_ACTIVE_LOW>;
-	};
-
-	sound-wm8524 {
-		compatible = "fsl,imx-audio-wm8524";
-		model = "wm8524-audio";
-		audio-cpu = <&sai3>;
-		audio-codec = <&wm8524>;
-		audio-routing =
-			"Line Out Jack", "LINEVOUTL",
-			"Line Out Jack", "LINEVOUTR";
-	};
-
-	sound-ak4458 {
-		compatible = "fsl,imx-audio-ak4458";
-		model = "ak4458-audio";
-		audio-cpu = <&sai1>;
-		audio-codec = <&ak4458_1>, <&ak4458_2>;
-		ak4458,pdn-gpio = <&pca6416 4 GPIO_ACTIVE_HIGH>;
-	};
-
-	sound-ak5558 {
-		compatible = "fsl,imx-audio-ak5558";
-		model = "ak5558-audio";
-		audio-cpu = <&sai5>;
-		audio-codec = <&ak5558>;
-		status = "disabled";
-	};
-
-	sound-ak4497 {
-		compatible = "fsl,imx-audio-ak4497";
-		model = "ak4497-audio";
-		audio-cpu = <&sai1>;
-		audio-codec = <&ak4497>;
-		status = "disabled";
-	};
-
-	sound-spdif {
-		compatible = "fsl,imx-audio-spdif";
-		model = "imx-spdif";
-		spdif-controller = <&spdif1>;
-		spdif-out;
-		spdif-in;
-	};
-
-	sound-micfil {
-		compatible = "fsl,imx-audio-micfil";
-		model = "imx-audio-micfil";
-		cpu-dai = <&micfil>;
-	};
 };
 
 &clk {
@@ -767,36 +713,6 @@
 		#gpio-cells = <2>;
 	};
 
-	ak4458_1: ak4458@10 {
-		compatible = "asahi-kasei,ak4458";
-		reg = <0x10>;
-		AVDD-supply = <&reg_audio_board>;
-		DVDD-supply = <&reg_audio_board>;
-	};
-
-	ak4458_2: ak4458@12 {
-		compatible = "asahi-kasei,ak4458";
-		reg = <0x12>;
-		AVDD-supply = <&reg_audio_board>;
-		DVDD-supply = <&reg_audio_board>;
-	};
-
-	ak5558: ak5558@13 {
-		compatible = "asahi-kasei,ak5558";
-		reg = <0x13>;
-		ak5558,pdn-gpio = <&pca6416 3 GPIO_ACTIVE_HIGH>;
-		AVDD-supply = <&reg_audio_board>;
-		DVDD-supply = <&reg_audio_board>;
-	};
-
-	ak4497: ak4497@11 {
-		compatible = "asahi-kasei,ak4497";
-		reg = <0x11>;
-		ak4497,pdn-gpio = <&pca6416 5 GPIO_ACTIVE_HIGH>;
-		AVDD-supply = <&reg_audio_board>;
-		DVDD-supply = <&reg_audio_board>;
-	};
-
 	ov5640_mipi: ov5640_mipi@3c {
 		compatible = "ovti,ov5640_mipi";
 		reg = <0x3c>;
@@ -899,7 +815,7 @@
 		<&clk IMX8MM_AUDIO_PLL1_OUT>, <&clk IMX8MM_AUDIO_PLL2_OUT>;
 	clock-names = "core", "rxtx0", "rxtx1", "rxtx2", "rxtx3",
 		"rxtx4", "rxtx5", "rxtx6", "rxtx7", "spba", "pll8k", "pll11k";
-	status = "okay";
+	status = "disabled";
 };
 
 &fec1 {
