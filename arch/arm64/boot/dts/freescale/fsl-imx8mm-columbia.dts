@@ -52,6 +52,14 @@
 		pinctrl-0 = <&pinctrl_ir_recv>;
 	};
 
+	apex_power {
+		compatible = "google,apex-power";
+		status = "okay";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_apex_pmic>;
+		power-supply = <&reg_apex>;
+	};
+
 	regulators {
 		compatible = "simple-bus";
 		#address-cells = <1>;
@@ -86,6 +94,17 @@
 			enable-active-high;
 			startup-delay-us = <300000>;
 			gpio = <&pca6416 1 GPIO_ACTIVE_HIGH>;
+		};
+
+		reg_apex: apex_pmic {
+			compatible = "regulator-fixed";
+			regulator-name = "apex_regulators";
+			regulator-min-microvolt = <1800000>;
+			regulator-max-microvolt = <1800000>;
+			gpio = <&gpio3 7 GPIO_ACTIVE_HIGH>;
+			enable-active-high;
+			regulator-always-on;
+			startup-delay-us = <500000>;
 		};
 	};
 
@@ -150,13 +169,11 @@
 				MX8MM_IOMUXC_SAI2_RXC_GPIO4_IO22	0x19
 			>;
 		};
-
+    /* Disabled for now */
 		pinctrl_flexspi0: flexspi0grp {
 			fsl,pins = <
 				MX8MM_IOMUXC_NAND_ALE_QSPI_A_SCLK		0x1c2
 				MX8MM_IOMUXC_NAND_CE0_B_QSPI_A_SS0_B		0x82
-				MX8MM_IOMUXC_NAND_DATA00_QSPI_A_DATA0		0x82
-				MX8MM_IOMUXC_NAND_DATA01_QSPI_A_DATA1		0x82
 				MX8MM_IOMUXC_NAND_DATA02_QSPI_A_DATA2		0x82
 				MX8MM_IOMUXC_NAND_DATA03_QSPI_A_DATA3		0x82
 			>;
@@ -189,11 +206,16 @@
 			>;
 		};
 
+		pinctrl_apex_pmic: apexpmicgrp {
+			fsl,pins = <
+			  MX8MM_IOMUXC_NAND_DATA01_GPIO3_IO7	0x41  /* open drain, pull down */
+			>;
+		};
+
 		pinctrl_pcie0: pcie0grp {
 			fsl,pins = <
 				MX8MM_IOMUXC_I2C4_SCL_PCIE1_CLKREQ_B	0x61 /* open drain, pull up */
-				MX8MM_IOMUXC_GPIO1_IO05_GPIO1_IO5	0x41
-				MX8MM_IOMUXC_SAI2_RXFS_GPIO4_IO21	0x41
+				MX8MM_IOMUXC_NAND_DATA00_GPIO3_IO6	0x51  /* APEX_SYS_RST_L */
 			>;
 		};
 
@@ -467,7 +489,7 @@
 &flexspi {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_flexspi0>;
-	status = "okay";
+	status = "disabled";
 
 	flash0: mt25qu256aba@0 {
 		reg = <0>;
@@ -843,9 +865,9 @@
 &pcie0{
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pcie0>;
-	disable-gpio = <&gpio1 5 GPIO_ACTIVE_LOW>;
-	reset-gpio = <&gpio4 21 GPIO_ACTIVE_LOW>;
+	reset-gpio = <&gpio3 6 GPIO_ACTIVE_LOW>;
 	ext_osc = <1>;
+	hard-wired = <1>;
 	status = "okay";
 };
 
