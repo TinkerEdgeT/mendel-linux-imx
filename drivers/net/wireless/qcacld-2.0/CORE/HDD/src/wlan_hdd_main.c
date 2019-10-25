@@ -10056,21 +10056,11 @@ static int kickstart_driver(bool load, bool mode_change)
  */
 void wlan_hdd_stop_enter_lowpower(hdd_context_t *hdd_ctx)
 {
-	bool ready;
-
 	/* Do not clean up n/w ifaces if we are in DRIVER STOP phase or else
 	 * DRIVER START will fail and Wi-Fi will not resume successfully
 	 */
 	if (hdd_ctx && !hdd_ctx->driver_being_stopped) {
-		ready = vos_is_load_unload_ready(__func__);
-		if (!ready) {
-			VOS_ASSERT(0);
-			return;
-		}
-
-		vos_load_unload_protect(__func__);
 		kickstart_driver(false, false);
-		vos_load_unload_unprotect(__func__);
 	}
 }
 
