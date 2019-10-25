@@ -757,6 +757,12 @@
 			};
 		};
 	};
+
+	led_driver: ktd2027@30 {
+		compatible = "kinetic,ktd2026";
+		reg = <0x30>;
+		status = "okay";
+	};
 };
 
 &lcdif {
