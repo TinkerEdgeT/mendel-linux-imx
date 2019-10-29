@@ -896,6 +896,18 @@ static int dwc3_core_init(struct dwc3 *dwc)
 		if (dwc->dis_tx_ipgap_linecheck_quirk)
 			reg |= DWC3_GUCTL1_TX_IPGAP_LINECHECK_DIS;
 
+		/*
+		 * Synopsys STAR:
+		 * USB3.0 HC died when read and write at the same
+		 * time with park mode.
+		 * It has advantage only a single async EP is
+		 * active, which is meaningless for application;
+		 * So disable park mode and synopsys will change
+		 * the default value of park mode to be disabled
+		 * in next release.
+		 */
+		reg |= DWC3_GUCTL1_PARKMODE_DISABLE;
+
 		dwc3_writel(dwc->regs, DWC3_GUCTL1, reg);
 	}
 
