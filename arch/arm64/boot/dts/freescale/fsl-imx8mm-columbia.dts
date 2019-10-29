@@ -473,6 +473,12 @@
 				MX8MM_IOMUXC_GPIO1_IO02_WDOG1_WDOG_B		0xc6
 			>;
 		};
+
+		pinctrl_usb2514b: usb2514bgrp {
+			fsl,pins = <
+				MX8MM_IOMUXC_SAI3_RXFS_GPIO4_IO28 0x41
+			>;
+		};
 	};
 };
 
@@ -758,6 +764,15 @@
 		};
 	};
 
+	usb2514b: usb2514b@2c {
+		compatible = "microchip,usb2514b";
+		reg = <0x2c>;
+		reset-gpios = <&gpio4 28 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb2514b>;
+		swap-dx-lanes = <1 2 3 4>;
+	};
+
 	led_driver: ktd2027@30 {
 		compatible = "kinetic,ktd2026";
 		reg = <0x30>;
@@ -911,11 +926,8 @@
 };
 
 &usbotg2 {
-	dr_mode = "otg";
-	extcon = <0>, <&typec2_ptn5110>;
-	picophy,pre-emp-curr-control = <3>;
-	picophy,dc-vol-level-adjust = <7>;
-	status = "disabled";
+	dr_mode = "host";
+	status = "okay";
 };
 
 &usdhc1 {
