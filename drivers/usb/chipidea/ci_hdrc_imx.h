@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright 2012-2015 Freescale Semiconductor, Inc.
  *
