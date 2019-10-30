@@ -225,18 +225,6 @@
 			>;
 		};
 
-		pinctrl_typec1: typec1grp {
-			fsl,pins = <
-				MX8MM_IOMUXC_SD1_STROBE_GPIO2_IO11	0x159
-			>;
-		};
-
-		pinctrl_typec2: typec2grp {
-			fsl,pins = <
-				MX8MM_IOMUXC_SD2_CD_B_GPIO2_IO12	0x159
-			>;
-		};
-
 		pinctrl_sai1: sai1grp {
 			fsl,pins = <
 				MX8MM_IOMUXC_SAI1_MCLK_SAI1_MCLK	0xd6
@@ -474,6 +462,18 @@
 				MX8MM_IOMUXC_GPIO1_IO02_WDOG1_WDOG_B		0xc6
 			>;
 		};
+
+		pinctrl_usb2514b: usb2514bgrp {
+			fsl,pins = <
+				MX8MM_IOMUXC_SAI3_RXFS_GPIO4_IO28 0x41
+			>;
+		};
+
+		pinctrl_ptn5150: ptn5150grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_GPIO1_IO11_GPIO1_IO11 0x41
+			>;
+		};
 	};
 };
 
@@ -663,46 +663,7 @@
 			};
 		};
 	};
-
-	typec1_ptn5110: tcpci@50 {
-		compatible = "usb,tcpci";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_typec1>;
-		reg = <0x50>;
-		interrupt-parent = <&gpio2>;
-		interrupts = <11 8>;
-		src-pdos = <0x380190c8>;
-		snk-pdos = <0x380190c8>;
-		/* Only can sink 5V for safe */
-		max-snk-mv = <5000>;
-		max-snk-ma = <3000>;
-		op-snk-mw = <10000>;
-		max-snk-mw = <15000>;
-		port-type = "drp";
-		default-role = "sink";
-		status = "okay";
-	};
-
-	typec2_ptn5110: tcpci@52 {
-		compatible = "usb,tcpci";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_typec2>;
-		reg = <0x52>;
-		interrupt-parent = <&gpio2>;
-		interrupts = <12 8>;
-		src-pdos = <0x380190c8>;
-		snk-pdos = <0x380190c8>;
-		/* Only can sink 5V for safe */
-		max-snk-mv = <5000>;
-		max-snk-ma = <3000>;
-		op-snk-mw = <10000>;
-		max-snk-mw = <15000>;
-		port-type = "drp";
-		default-role = "sink";
-		status = "okay";
-	};
 };
-
 
 &mipi_csi_1 {
 	#address-cells = <1>;
@@ -759,9 +720,28 @@
 		};
 	};
 
+	usb2514b: usb2514b@2c {
+		compatible = "microchip,usb2514b";
+		reg = <0x2c>;
+		reset-gpios = <&gpio4 28 GPIO_ACTIVE_LOW>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_usb2514b>;
+		swap-dx-lanes = <1 2 3 4>;
+	};
+
 	led_driver: ktd2027@30 {
 		compatible = "kinetic,ktd2026";
 		reg = <0x30>;
+		status = "okay";
+	};
+
+	typec_ptn5150: ptn5150@3d {
+		compatible = "nxp,ptn5150a";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_ptn5150>;
+		reg = <0x3d>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <11 IRQ_TYPE_EDGE_FALLING>;
 		status = "okay";
 	};
 };
@@ -905,18 +885,15 @@
 
 &usbotg1 {
 	dr_mode = "otg";
-	extcon = <0>, <&typec1_ptn5110>;
+	extcon = <0>, <&typec_ptn5150>;
 	picophy,pre-emp-curr-control = <3>;
 	picophy,dc-vol-level-adjust = <7>;
 	status = "okay";
 };
 
 &usbotg2 {
-	dr_mode = "otg";
-	extcon = <0>, <&typec2_ptn5110>;
-	picophy,pre-emp-curr-control = <3>;
-	picophy,dc-vol-level-adjust = <7>;
-	status = "disabled";
+	dr_mode = "host";
+	status = "okay";
 };
 
 &usdhc1 {
