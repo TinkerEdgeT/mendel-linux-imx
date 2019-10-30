@@ -1384,6 +1384,7 @@ static int dwc3_suspend_common(struct dwc3 *dwc)
 		spin_lock_irqsave(&dwc->lock, flags);
 		dwc3_gadget_suspend(dwc);
 		spin_unlock_irqrestore(&dwc->lock, flags);
+		synchronize_irq(dwc->irq_gadget);
 		dwc3_core_exit(dwc);
 		break;
 	case DWC3_GCTL_PRTCAP_HOST:
@@ -1409,6 +1410,7 @@ static int dwc3_resume_common(struct dwc3 *dwc)
 		spin_lock_irqsave(&dwc->lock, flags);
 		dwc3_gadget_resume(dwc);
 		spin_unlock_irqrestore(&dwc->lock, flags);
+		synchronize_irq(dwc->irq_gadget);
 		break;
 	case DWC3_GCTL_PRTCAP_HOST:
 	default:
