@@ -1,0 +1,24 @@
+// Set Columbia M2 edgetpu card interface.
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "fsl,imx8mm-columbia";
+
+	fragment@0 {
+		target = <&pinctrl_pcie0>;
+			__overlay__ {
+				fsl,pins = <
+					0x22c 0x494 0x524 0x12 0x0 0x61  /* MX8MM_IOMUXC_I2C4_SCL_PCIE1_CLKREQ_B */
+					0x058 0x2c0 0x000 0x0 0x0 0x51  /* MX8MM_IOMUXC_GPIO1_IO12_GPIO1_IO12 as APEX_SYS_RST_L for M2 */
+					>;
+			};
+	};
+
+	fragment@1 {
+		target = <&pcie0>;
+			__overlay__ {
+				reset-gpio = <&gpio1 12 1>;  // GPIO_ACTIVE_LOW
+			};
+	};
+};
