@@ -6,4 +6,10 @@ config SND_GOOGLE_EDGETPU_CARD
 	help
 	  Say Y if you want to add support for Google Edge TPU audio
 
+config SND_SOC_IMX_MAX98357A
+	tristate "MAX98375a codec driver"
+	select SND_SOC_MAX98357A
+	help
+	  Say Y if you want to add support for MAX98375A amplifier
+
 endmenu
