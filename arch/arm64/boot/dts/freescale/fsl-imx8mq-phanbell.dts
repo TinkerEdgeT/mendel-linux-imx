@@ -50,7 +50,7 @@
 		audio-cpu = <&sai2>;
 		audio-codec = <&rt5645>;
 		google,model = "edgetpu-audio-card";
-        status = "okay";
+		status = "okay";
 	};
 
 	busfreq {
@@ -59,15 +59,6 @@
 
 	fan: gpio_fan {
 		gpios = <&gpio3 5 GPIO_ACTIVE_LOW>;
-		status = "okay";
-	};
-
-	sound-rt5645 {
-		compatible = "google,edgetpu-audio-card";
-		model = "edgetpu-audio-card";
-		audio-cpu = <&sai2>;
-		audio-codec = <&rt5645>;
-		google,model = "edgetpu-audio-card";
 		status = "okay";
 	};
 };
