@@ -123,19 +123,19 @@
 &pwm1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm1>;
-	status = "disabled";
+	status = "okay";
 };
 
 &pwm2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm2>;
-	status = "disabled";
+	status = "okay";
 };
 
 &pwm4 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm4>;
-	status = "disabled";
+	status = "okay";
 };
 
 &ecspi1 {
@@ -144,7 +144,7 @@
 	pinctrl-0 = <&pinctrl_ecspi1 &pinctrl_ecspi1_cs>;
 	cs-gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>,
 		   <&gpio3 2 GPIO_ACTIVE_HIGH>;
-	status = "disabled";
+	status = "okay";
 
 	spidev@0 {
 		#address-cells = <1>;
@@ -320,7 +320,7 @@
 &sai1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai1>;
-	status = "disabled";
+	status = "okay";
 };
 
 &sai2 {

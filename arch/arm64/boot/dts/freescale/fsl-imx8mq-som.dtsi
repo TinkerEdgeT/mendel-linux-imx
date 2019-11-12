@@ -541,7 +541,7 @@
 	pinctrl-0 = <&pinctrl_uart3>;
 	assigned-clocks = <&clk IMX8MQ_CLK_UART3_SRC>;
 	assigned-clock-parents = <&clk IMX8MQ_CLK_25M>;
-	status = "disabled";
+	status = "okay";
 };
 
 &usdhc1 {
