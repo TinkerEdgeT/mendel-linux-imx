@@ -17,5 +17,6 @@
 
 #define FT5416     0x54160002
 #define FT5426     0x54260002
+#define FT6236     0x6236D003
 
 #endif /* _DT_BINDINGS_INPUT_INPUT_H */

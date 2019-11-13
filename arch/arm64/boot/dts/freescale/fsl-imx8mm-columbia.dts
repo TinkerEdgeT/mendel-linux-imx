@@ -149,18 +149,6 @@
 			>;
 		};
 
-		pinctrl_mipi_dsi_en: mipi_dsi_en {
-			fsl,pins = <
-				MX8MM_IOMUXC_GPIO1_IO08_GPIO1_IO8		0x16
-			>;
-		};
-
-		pinctrl_i2c2_synaptics_dsx_io: synaptics_dsx_iogrp {
-			fsl,pins = <
-				MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x19	/* Touch int */
-			>;
-		};
-
 		pinctrl_fec1: fec1grp {
 			fsl,pins = <
 				MX8MM_IOMUXC_ENET_MDC_ENET1_MDC		0x3
@@ -485,7 +473,37 @@
 				MX8MM_IOMUXC_GPIO1_IO11_GPIO1_IO11 0x41
 			>;
 		};
+
+		pinctrl_ts_int: ts_intgrp {
+			fsl,pins = <
+				MX8MM_IOMUXC_GPIO1_IO09_GPIO1_IO9		0x41	/* Touch int */
+			>;
+		};
+
+		pinctrl_displaymux: displaymuxgrp {
+			fsl,pins = <
+				MX8MM_IOMUXC_I2C4_SDA_GPIO5_IO21 0x01  // display mux
+			>;
+		};
+
+		pinctrl_bl_pwm0: bl_pwm0grp {
+			fsl,pins = <
+				MX8MM_IOMUXC_SPDIF_RX_PWM2_OUT 0x41  // touch backlight
+			>;
+		};
+
+		pinctrl_ts_dsi_reset: ts_dsi_resetgrp {
+			fsl,pins = <
+				MX8MM_IOMUXC_GPIO1_IO01_GPIO1_IO1 0x41  // touch display reset
+			>;
+		};
 	};
+};
+
+&pwm2 {
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_bl_pwm0>;
+	status = "okay";
 };
 
 &csi1_bridge {
@@ -680,6 +698,19 @@
 				remote-endpoint = <&mipi1_sensor_ep>;
 			};
 		};
+	};
+
+	focaltech@38 {
+		compatible = "focaltech,fts";
+		reg = <0x38>;
+		pinctrl-0 = <&pinctrl_ts_int>;
+		interrupt-parent = <&gpio1>;
+		interrupts = <9 0x02>;
+		focaltech,panel-type = <FT6236>;
+		focaltech,reset-gpio = <&gpio1 1 0x01>;
+		focaltech,irq-gpio = <&gpio1 9 0x02>;
+		focaltech,max-touch-number = <5>;
+		focaltech,display-coords =  <0 0 320 480>;
 	};
 };
 
