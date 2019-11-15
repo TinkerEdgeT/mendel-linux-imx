@@ -619,6 +619,7 @@ debugfs_done:
 	idev->buffers = RB_ROOT;
 	mutex_init(&idev->buffer_lock);
 	init_rwsem(&idev->lock);
+	mutex_init(&idev->buffer_lock);
 	plist_head_init(&idev->heaps);
 	internal_dev = idev;
 	return 0;
