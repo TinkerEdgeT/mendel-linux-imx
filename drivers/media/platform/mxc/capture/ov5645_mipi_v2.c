@@ -2895,11 +2895,14 @@ static int ov5645_change_mode_exposure_calc(enum ov5645_frame_rate frame_rate,
 	}
 	OV5645_set_shutter(cap_shutter);
 
+	/* turn on AE/AG */
+	OV5645_turn_on_AE_AG(1);
+
 err:
 	return retval;
 }
 
-/* if sensor changes inside scaling or subsampling
+/* if sensor changes inside the same cap_sysclk, HTS, and VTS,
  * change mode directly
  * */
 static int ov5645_change_mode_direct(enum ov5645_frame_rate frame_rate,
@@ -2976,15 +2979,8 @@ static int ov5645_init_mode(enum ov5645_frame_rate frame_rate,
 
 		ov5645_dnld_af_fw();
 
-	} else if ((dn_mode == SUBSAMPLING && orig_dn_mode == SCALING) ||
-			(dn_mode == SCALING && orig_dn_mode == SUBSAMPLING)) {
-		/* change between subsampling and scaling
-		 * go through exposure calucation */
-		retval = ov5645_change_mode_exposure_calc(frame_rate, mode);
 	} else {
-		/* change inside subsampling or scaling
-		 * download firmware directly */
-		retval = ov5645_change_mode_direct(frame_rate, mode);
+		retval = ov5645_change_mode_exposure_calc(frame_rate, mode);
 	}
 
 	if (retval < 0)
