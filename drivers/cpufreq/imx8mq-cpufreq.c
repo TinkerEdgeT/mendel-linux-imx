@@ -20,9 +20,6 @@
 #include <linux/suspend.h>
 #include <linux/device_cooling.h>
 
-#define DC_VOLTAGE_MIN		850000
-#define DC_VOLTAGE_MAX		1000000
-
 static struct device *cpu_dev;
 static bool free_opp;
 static struct cpufreq_frequency_table *freq_table;
@@ -33,7 +30,6 @@ static struct clk *arm_pll_clk;
 static struct clk *arm_pll_out_clk;
 static struct clk *sys1_pll_800m_clk;
 struct thermal_cooling_device *cdev;
-static struct regulator *dc_reg;
 static struct regulator *arm_reg;
 
 static int imx8mq_set_target(struct cpufreq_policy *policy, unsigned int index)
@@ -58,16 +54,6 @@ static int imx8mq_set_target(struct cpufreq_policy *policy, unsigned int index)
 	dev_dbg(cpu_dev, "%u MHz --> %u MHz\n",
 		old_freq / 1000, new_freq / 1000);
 
-	if (new_freq == policy->max) {
-		if (!IS_ERR(dc_reg)) {
-			ret = regulator_set_voltage_tol(dc_reg, DC_VOLTAGE_MAX, 0);
-			if (ret) {
-				dev_err(cpu_dev, "failed to scale dc_reg up: %d\n", ret);
-				return ret;
-			}
-		}
-	}
-
 	if (new_freq > old_freq) {
 		if (!IS_ERR(arm_reg)) {
 			ret = regulator_set_voltage_tol(arm_reg, volt, 0);
@@ -75,22 +61,14 @@ static int imx8mq_set_target(struct cpufreq_policy *policy, unsigned int index)
 				dev_err(cpu_dev, "failed to scale arm_reg up: %d\n", ret);
 				return ret;
 			}
+		} else {
+				dev_err(cpu_dev, "Can't change CPU voltage\n");
 		}
 	}
 
 	clk_set_parent(arm_a53_src_clk, sys1_pll_800m_clk);
 	clk_set_rate(arm_pll_clk, new_freq * 1000);
 	clk_set_parent(arm_a53_src_clk, arm_pll_out_clk);
-
-	if (old_freq == policy->max) {
-		if (!IS_ERR(dc_reg)) {
-			ret = regulator_set_voltage_tol(dc_reg, DC_VOLTAGE_MIN, 0);
-			if (ret) {
-				dev_err(cpu_dev, "failed to scale dc_reg down: %d\n", ret);
-				return ret;
-			}
-		}
-	}
 
 	if (new_freq < old_freq) {
 		if (!IS_ERR(arm_reg)) {
@@ -99,6 +77,8 @@ static int imx8mq_set_target(struct cpufreq_policy *policy, unsigned int index)
 				dev_err(cpu_dev, "failed to scale arm_reg down: %d\n", ret);
 				return ret;
 			}
+		} else {
+				dev_err(cpu_dev, "Can't change CPU voltage\n");
 		}
 	}
 
@@ -262,7 +242,6 @@ static int imx8mq_cpufreq_probe(struct platform_device *pdev)
 		goto put_clk;
 	}
 
-	dc_reg = regulator_get_optional(cpu_dev, "dc");
 	arm_reg = regulator_get_optional(cpu_dev, "arm");
 
 	/*

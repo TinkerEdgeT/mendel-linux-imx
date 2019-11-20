@@ -665,7 +665,7 @@
 		1000000 850000
 		500000  850000
 	>;
-	dc-supply = <&buck2_reg>;
+	arm-supply = <&buck2_reg>;
 };
 
 &hdmi {
