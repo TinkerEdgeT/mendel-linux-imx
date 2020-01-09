@@ -123,19 +123,19 @@
 &pwm1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm1>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm2>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm4 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm4>;
-	status = "okay";
+	status = "disabled";
 };
 
 &ecspi1 {
@@ -144,7 +144,7 @@
 	pinctrl-0 = <&pinctrl_ecspi1 &pinctrl_ecspi1_cs>;
 	cs-gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>,
 		   <&gpio3 2 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+	status = "disabled";
 
 	spidev@0 {
 		#address-cells = <1>;
@@ -186,6 +186,8 @@
 				MX8MQ_IOMUXC_SAI5_RXC_GPIO3_IO20		0x19
 				MX8MQ_IOMUXC_SAI5_RXD2_GPIO3_IO23		0x19
 				MX8MQ_IOMUXC_SAI5_MCLK_GPIO3_IO25		0x19
+				MX8MQ_IOMUXC_UART1_TXD_GPIO5_IO23		0x19
+				MX8MQ_IOMUXC_UART1_RXD_GPIO5_IO22		0x19
 			>;
 		};
 
