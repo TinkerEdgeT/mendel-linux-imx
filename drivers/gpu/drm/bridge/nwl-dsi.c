@@ -318,13 +318,16 @@ static void nwl_dsi_config_host(struct nwl_mipi_dsi *dsi)
 
 	nwl_dsi_write(dsi, CFG_NUM_LANES, dsi->lanes - 1);
 
-	if (dsi->dsi_mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS) {
+	if (dsi->dsi_mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS)
 		nwl_dsi_write(dsi, CFG_NONCONTINUOUS_CLK, 0x01);
-		nwl_dsi_write(dsi, CFG_AUTOINSERT_EOTP, 0x01);
-	} else {
+	else
 		nwl_dsi_write(dsi, CFG_NONCONTINUOUS_CLK, 0x00);
+
+	if (dsi->dsi_mode_flags& MIPI_DSI_MODE_EOT_PACKET)
 		nwl_dsi_write(dsi, CFG_AUTOINSERT_EOTP, 0x00);
-	}
+	else
+		nwl_dsi_write(dsi, CFG_AUTOINSERT_EOTP, 0x01);
+
 
 	nwl_dsi_write(dsi, CFG_T_PRE, 0x01);
 	nwl_dsi_write(dsi, CFG_T_POST, 0x34);
@@ -336,11 +339,14 @@ static void nwl_dsi_config_host(struct nwl_mipi_dsi *dsi)
 	nwl_dsi_write(dsi, CFG_TWAKEUP, 0x3a98);
 }
 
+#define VIDEO_MODE_SYNC_PULSE		0
+#define VIDEO_MODE_SYNC_EVENT		1
+#define VIDEO_MODE_SYNC_BURST		2
+
 static void nwl_dsi_config_dpi(struct nwl_mipi_dsi *dsi)
 {
 	struct videomode *vm = &dsi->vm;
 	u32 color_format = nwl_dsi_get_dpi_pixel_format(dsi->format);
-	bool burst_mode;
 
 	nwl_dsi_write(dsi, INTERFACE_COLOR_CODING, DPI_24_BIT);
 	nwl_dsi_write(dsi, PIXEL_FORMAT, color_format);
@@ -348,16 +354,17 @@ static void nwl_dsi_config_dpi(struct nwl_mipi_dsi *dsi)
 	nwl_dsi_write(dsi, VSYNC_POLARITY, 0x00);
 	nwl_dsi_write(dsi, HSYNC_POLARITY, 0x00);
 
-	burst_mode = (dsi->dsi_mode_flags & MIPI_DSI_MODE_VIDEO_BURST) &&
-		!(dsi->dsi_mode_flags & MIPI_DSI_MODE_VIDEO_SYNC_PULSE);
-
-	if (burst_mode) {
-		nwl_dsi_write(dsi, VIDEO_MODE, 0x2);
+	if (dsi->dsi_mode_flags & MIPI_DSI_MODE_VIDEO_BURST) {
+		nwl_dsi_write(dsi, VIDEO_MODE, VIDEO_MODE_SYNC_BURST);
 		nwl_dsi_write(dsi, PIXEL_FIFO_SEND_LEVEL, 256);
+	} else if (dsi->dsi_mode_flags & MIPI_DSI_MODE_VIDEO_SYNC_PULSE) {
+		nwl_dsi_write(dsi, VIDEO_MODE, VIDEO_MODE_SYNC_PULSE);
+		nwl_dsi_write(dsi, PIXEL_FIFO_SEND_LEVEL, vm->hactive);
 	} else {
-		nwl_dsi_write(dsi, VIDEO_MODE, 0x0);
+		nwl_dsi_write(dsi, VIDEO_MODE, VIDEO_MODE_SYNC_EVENT);
 		nwl_dsi_write(dsi, PIXEL_FIFO_SEND_LEVEL, vm->hactive);
 	}
+
 
 	nwl_dsi_write(dsi, HFP, vm->hfront_porch);
 	nwl_dsi_write(dsi, HBP, vm->hback_porch);
@@ -1099,6 +1106,7 @@ static const struct drm_bridge_funcs nwl_dsi_bridge_funcs = {
 };
 
 extern int tinker_mcu_is_connected(void);
+extern int tinker_mcu_ili9881c_is_connected(void);
 static int nwl_dsi_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -1107,10 +1115,11 @@ static int nwl_dsi_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret;
 
-	if(!tinker_mcu_is_connected()) {
-		printk("tc358762 panel is not connected, dsi bridge probe stop\n");
+	if(!tinker_mcu_is_connected() && !tinker_mcu_ili9881c_is_connected()) {
+		printk("tc358762 panel  and  ili9881c is not connected, dsi bridge probe stop\n");
 		return -ENODEV;
 	}
+
 
 	dsi = devm_kzalloc(dev, sizeof(*dsi), GFP_KERNEL);
 	if (!dsi)

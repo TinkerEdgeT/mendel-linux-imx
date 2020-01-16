@@ -26,7 +26,7 @@ config DRM_PANEL_JDI_LT070ME05000
 	help
 	  Say Y here if you want to enable support for JDI DSI video mode
 	  panel as found in Google Nexus 7 (2013) devices.
-	  The panel has a 1200(RGB)×1920 (WUXGA) resolution and uses
+	  The panel has a 1200(RGB)?1920 (WUXGA) resolution and uses
 	  24 bit per pixel.
 
 config DRM_PANEL_SAMSUNG_LD9040
@@ -105,6 +105,16 @@ config DRM_PANEL_TOSHIBA_TC358762
 	select VIDEOMODE_HELPERS
 	help
 	  Say Y here if you want to enable support for toshiba tc358762 panel.
+	  To compile this driver as a module, choose M here.
+
+config DRM_PANEL_ASUS_ILI9881C
+	tristate "support for ASUS ili9881c panel"
+	depends on OF && I2C
+	depends on DRM_MIPI_DSI
+	select TINKER_MCU
+	select VIDEOMODE_HELPERS
+	help
+	  Say Y here if you want to enable support for ASUS ili9881c panel.
 	  To compile this driver as a module, choose M here.
 
 endmenu

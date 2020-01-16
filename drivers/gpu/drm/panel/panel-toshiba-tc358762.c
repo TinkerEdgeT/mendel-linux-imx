@@ -7,8 +7,10 @@
 #include <video/mipi_display.h>
 #include <video/of_videomode.h>
 #include <video/videomode.h>
+#include <linux/backlight.h>
 
 struct tc358762_panel {
+	struct backlight_device *backlight;
 	struct drm_panel base;
 	struct mipi_dsi_device *dsi;
 
@@ -111,6 +113,7 @@ static int tc358762_panel_unprepare(struct drm_panel *panel)
 	return 0;
 }
 
+struct backlight_device * tinker_mcu_get_backlightdev(void);
 extern int tinker_mcu_set_bright(int bright);
 static int tc358762_enable(struct drm_panel *panel)
 {
@@ -121,7 +124,14 @@ static int tc358762_enable(struct drm_panel *panel)
 
 	printk("tc358762_enable\n");
 
-	tinker_mcu_set_bright(0xFF);
+	if (tc->backlight) {
+		tc->backlight->props.power = FB_BLANK_UNBLANK;
+		backlight_update_status(tc->backlight);
+	} else {
+		printk("panel enable: no backlight device\n");
+		tinker_mcu_set_bright(0xFF);
+	}
+
 	tc->enabled = true;
 
 	return 0;
@@ -136,7 +146,14 @@ static int tc358762_disable(struct drm_panel *panel)
 
 	printk("tc358762_disable\n");
 
-	tinker_mcu_set_bright(0x00);
+	if (tc->backlight) {
+		tc->backlight->props.power = FB_BLANK_POWERDOWN;
+		backlight_update_status(tc->backlight);
+	} else {
+		printk("panel disable: no backlight device\n");
+		tinker_mcu_set_bright(0x00);
+	}
+
 
 	tc->enabled = false;
 
@@ -202,7 +219,7 @@ static const struct display_timing tc358762_default_timing = {
 		DISPLAY_FLAGS_PIXDATA_NEGEDGE,
 };
 
-static int tc358762_dsi_probe(struct mipi_dsi_device *dsi)
+int tc358762_dsi_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
 	struct device_node *np = dev->of_node;
@@ -218,20 +235,24 @@ static int tc358762_dsi_probe(struct mipi_dsi_device *dsi)
 	panel->dsi = dsi;
 
 	dsi->format = MIPI_DSI_FMT_RGB888;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_LPM;
-
-	ret = of_property_read_u32(np, "dsi-lanes", &dsi->lanes);
-	if (ret < 0) {
-		dev_err(dev, "Failed to get dsi-lanes property (%d)\n", ret);
-		return ret;
-	}
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO |MIPI_DSI_MODE_VIDEO_SYNC_PULSE | MIPI_DSI_MODE_LPM;
+	dsi->lanes = 1;
 
 	ret = of_get_videomode(np, &panel->vm, 0);
 	if (ret < 0)
 		videomode_from_timing(&tc358762_default_timing, &panel->vm);
 
-	of_property_read_u32(np, "panel-width-mm", &panel->width_mm);
-	of_property_read_u32(np, "panel-height-mm", &panel->height_mm);
+	panel->backlight =  tinker_mcu_get_backlightdev();
+	if (!panel->backlight) {
+		printk("tc358762_mipi_probe get backlight fail\n");
+		//return -ENODEV;
+	} else {
+		panel->backlight->props.brightness = 255;
+		printk("tc358762_mipi_probe get backligh device successful\n");
+	}
+
+	panel->width_mm = 68;
+	panel->height_mm = 121;
 
 	drm_panel_init(&panel->base);
 	panel->base.funcs = &tc358762_funcs;
@@ -249,7 +270,7 @@ static int tc358762_dsi_probe(struct mipi_dsi_device *dsi)
 	return ret;
 }
 
-static int tc358762_dsi_remove(struct mipi_dsi_device *dsi)
+int tc358762_dsi_remove(struct mipi_dsi_device *dsi)
 {
 	struct tc358762_panel *tc = mipi_dsi_get_drvdata(dsi);
 	struct device *dev = &dsi->dev;
@@ -272,7 +293,7 @@ static int tc358762_dsi_remove(struct mipi_dsi_device *dsi)
 	return 0;
 }
 
-static void tc358762_dsi_shutdown(struct mipi_dsi_device *dsi)
+void tc358762_dsi_shutdown(struct mipi_dsi_device *dsi)
 {
 	struct tc358762_panel *tc = mipi_dsi_get_drvdata(dsi);
 
