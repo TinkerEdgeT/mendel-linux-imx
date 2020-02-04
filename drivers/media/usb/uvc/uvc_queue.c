@@ -21,7 +21,7 @@
 #include <linux/vmalloc.h>
 #include <linux/wait.h>
 #include <media/videobuf2-v4l2.h>
-#include <media/videobuf2-vmalloc.h>
+#include <media/videobuf2-dma-contig.h>
 
 #include "uvcvideo.h"
 
@@ -198,8 +198,8 @@ static const struct vb2_ops uvc_queue_qops = {
 	.stop_streaming = uvc_stop_streaming,
 };
 
-int uvc_queue_init(struct uvc_video_queue *queue, enum v4l2_buf_type type,
-		    int drop_corrupted)
+int uvc_queue_init(struct device *dev, struct uvc_video_queue *queue,
+			enum v4l2_buf_type type, int drop_corrupted)
 {
 	int ret;
 
@@ -208,7 +208,8 @@ int uvc_queue_init(struct uvc_video_queue *queue, enum v4l2_buf_type type,
 	queue->queue.drv_priv = queue;
 	queue->queue.buf_struct_size = sizeof(struct uvc_buffer);
 	queue->queue.ops = &uvc_queue_qops;
-	queue->queue.mem_ops = &vb2_vmalloc_memops;
+	queue->queue.mem_ops = &vb2_dma_contig_memops;
+	queue->queue.dev = dev;
 	queue->queue.timestamp_flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC
 		| V4L2_BUF_FLAG_TSTAMP_SRC_SOE;
 	queue->queue.lock = &queue->mutex;

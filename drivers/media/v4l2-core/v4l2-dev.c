@@ -26,6 +26,7 @@
 #include <linux/kmod.h>
 #include <linux/slab.h>
 #include <linux/uaccess.h>
+#include <linux/dma-mapping.h>
 
 #include <media/v4l2-common.h>
 #include <media/v4l2-device.h>
@@ -1019,6 +1020,10 @@ int __video_register_device(struct video_device *vdev, int type, int nr,
 
 	/* Part 6: Activate this minor. The char device can now be used. */
 	set_bit(V4L2_FL_REGISTERED, &vdev->flags);
+
+	/* Use physically contiguous memory for DMA. No-op if DMA is
+	   already configured */
+	arch_setup_dma_ops(&vdev->dev, 0, 0, NULL, false);
 
 	return 0;
 
