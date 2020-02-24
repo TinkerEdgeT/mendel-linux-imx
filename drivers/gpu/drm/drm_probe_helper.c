@@ -62,6 +62,7 @@
  */
 
 static bool drm_kms_helper_poll = true;
+static bool drm_acer_t230h_monitor = false;
 module_param_named(poll, drm_kms_helper_poll, bool, 0600);
 
 static enum drm_mode_status
@@ -402,6 +403,7 @@ int drm_helper_probe_single_connector_modes(struct drm_connector *connector,
 	bool verbose_prune = true;
 	enum drm_connector_status old_status;
 	struct drm_modeset_acquire_ctx ctx;
+	struct edid *edid_manufacturer;
 
 	WARN_ON(!mutex_is_locked(&dev->mode_config.mutex));
 
@@ -550,6 +552,12 @@ prune:
 
 	DRM_DEBUG_KMS("[CONNECTOR:%d:%s] probed modes :\n", connector->base.id,
 			connector->name);
+	if (!strcmp(connector->name, "HDMI-A-1")) {
+		if( (*connector_funcs->check_edid)(connector) ) {
+			edid_manufacturer = (struct edid *) connector->edid_blob_ptr->data;
+			drm_acer_t230h_monitor = drm_dect_acer_t230h_edid(edid_manufacturer);
+		}
+	}
 	list_for_each_entry(mode, &connector->modes, head) {
 		drm_mode_set_crtcinfo(mode, CRTC_INTERLACE_HALVE_V);
 		drm_mode_debug_printmodeline(mode);
@@ -558,6 +566,12 @@ prune:
 	return count;
 }
 EXPORT_SYMBOL(drm_helper_probe_single_connector_modes);
+
+bool detect_acer_t230h_monitor(void)
+{
+	return drm_acer_t230h_monitor;
+}
+EXPORT_SYMBOL(drm_acer_t230h_monitor);
 
 /**
  * drm_kms_helper_hotplug_event - fire off KMS hotplug events

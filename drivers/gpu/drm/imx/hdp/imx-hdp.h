@@ -91,6 +91,8 @@
 #define state_to_imx_hdp(env) \
 	container_of(env, struct imx_hdp, state)
 
+extern bool detect_acer_t230h_monitor(void);
+
 struct hdp_clks;
 
 struct hdp_ops {

@@ -741,7 +741,7 @@ static void imx_hdp_mode_setup(struct imx_hdp *hdp,
 			       struct drm_display_mode *mode)
 {
 	int ret;
-
+	bool interlaced = !!(mode->flags & DRM_MODE_FLAG_INTERLACE);
 	/* set pixel clock before video mode setup */
 	imx_hdp_call(hdp, pixel_clock_disable, &hdp->clks);
 
@@ -760,6 +760,7 @@ static void imx_hdp_mode_setup(struct imx_hdp *hdp,
 	}
 
 	/* mode set */
+	DRM_INFO("Update mode to %dx%d%s%d\n",mode->crtc_hdisplay, mode->crtc_vdisplay, interlaced ? "i" : "p",mode->vrefresh);
 	ret = imx_hdp_call(hdp, phy_init, &hdp->state, mode, hdp->format,
 			   hdp->bpc);
 	if (ret < 0) {
@@ -794,7 +795,21 @@ static void imx_hdp_bridge_mode_set(struct drm_bridge *bridge,
 				    struct drm_display_mode *mode)
 {
 	struct imx_hdp *hdp = bridge->driver_private;
+	bool acer_t230h_monitor = false;
+	bool PHSYNC = !!(mode->flags & DRM_MODE_FLAG_PHSYNC);
+	bool NHSYNC = !!(mode->flags & DRM_MODE_FLAG_NHSYNC);
 
+	acer_t230h_monitor = detect_acer_t230h_monitor();
+	if(acer_t230h_monitor) {
+		if( (mode->crtc_hdisplay == 1920) && (mode->crtc_vdisplay == 1080)) {
+			DRM_INFO("Detect acer t230h 1920x1080 timing set NHSYNC to PHSYNC\n");
+
+			if(NHSYNC) {
+				mode->flags &= ~DRM_MODE_FLAG_NHSYNC;
+				mode->flags |= DRM_MODE_FLAG_PHSYNC;
+			}
+		}
+	}
 	mutex_lock(&hdp->mutex);
 
 	hdp->dual_mode = imx_hdp_is_dual_mode(mode);
@@ -1035,6 +1050,25 @@ static int imx_hdp_connector_atomic_check(struct drm_connector *conn,
 	return 0;
 }
 
+static bool imx_hdp_connector_check_edid(struct drm_connector *connector)
+{
+	struct imx_hdp *hdp = container_of(connector, struct imx_hdp,
+					   connector);
+	struct edid *edid;
+	if (!hdp->no_edid) {
+		edid = drm_do_get_edid(connector, hdp->ops->get_edid_block,
+				       &hdp->state);
+		if (edid) {
+			kfree(edid);
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
+}
+
 static const struct drm_connector_funcs imx_hdp_connector_funcs = {
 	.fill_modes = drm_helper_probe_single_connector_modes,
 	.detect = imx_hdp_connector_detect,
@@ -1051,7 +1085,7 @@ imx_hdp_connector_helper_funcs = {
 	.get_modes = imx_hdp_connector_get_modes,
 	.mode_valid = imx_hdp_connector_mode_valid,
 	.atomic_check = imx_hdp_connector_atomic_check,
-
+	.check_edid = imx_hdp_connector_check_edid,
 };
 
 static const struct drm_bridge_funcs imx_hdp_bridge_funcs = {

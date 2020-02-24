@@ -977,6 +977,8 @@ struct drm_connector_helper_funcs {
 	 */
 	int (*atomic_check)(struct drm_connector *connector,
 			    struct drm_connector_state *state);
+
+	bool (*check_edid)(struct drm_connector *connector);
 };
 
 /**

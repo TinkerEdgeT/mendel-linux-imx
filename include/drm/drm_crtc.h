@@ -75,6 +75,8 @@ struct drm_atomic_state;
 struct drm_crtc_helper_funcs;
 struct drm_plane_helper_funcs;
 
+extern bool drm_dect_acer_t230h_edid(struct edid *edid);
+
 /**
  * struct drm_crtc_state - mutable CRTC state
  * @crtc: backpointer to the CRTC

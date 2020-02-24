@@ -1279,6 +1279,10 @@ static const u8 edid_header[] = {
 	0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00
 };
 
+static const u8 acer_t230h_edid[] = {
+	0x04, 0x72, 0xf1, 0x00
+};
+
 /**
  * drm_edid_header_is_valid - sanity check the header of the base EDID block
  * @raw_edid: pointer to raw base EDID block
@@ -1298,6 +1302,21 @@ int drm_edid_header_is_valid(const u8 *raw_edid)
 	return score;
 }
 EXPORT_SYMBOL(drm_edid_header_is_valid);
+
+bool drm_dect_acer_t230h_edid(struct edid *edid)
+{
+	int i, score = 0;
+	u8 *raw_edid = (u8 *)edid;
+	for (i = 0; i < sizeof(acer_t230h_edid); i++)
+		if (raw_edid[8+i] == acer_t230h_edid[i])
+			score++;
+
+	if (score == 4)
+		return true;
+	else
+		return false;
+}
+EXPORT_SYMBOL(drm_dect_acer_t230h_edid);
 
 static int edid_fixup __read_mostly = 6;
 module_param_named(edid_fixup, edid_fixup, int, 0400);
