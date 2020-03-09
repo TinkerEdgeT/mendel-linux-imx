@@ -621,7 +621,7 @@ static ulong gasket_extended_lvl0_page_idx(struct gasket_page_table *pg_tbl,
 					   u64 dev_addr)
 {
 	return (dev_addr >> GASKET_EXTENDED_LVL0_SHIFT) &
-	       (pg_tbl->config.total_entries - 1);
+		(pg_tbl->config.total_entries - 1);
 }
 
 /*
