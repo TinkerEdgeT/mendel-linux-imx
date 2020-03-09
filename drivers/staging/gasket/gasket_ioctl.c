@@ -155,12 +155,12 @@ static int gasket_map_buffers(struct gasket_dev *gasket_dev,
 			      struct gasket_page_table_ioctl __user *argp)
 {
 	struct gasket_page_table_ioctl_flags ibuf;
- 
+
 	if (copy_from_user(&ibuf.base, argp, sizeof(struct gasket_page_table_ioctl)))
- 		return -EFAULT;
- 
+		return -EFAULT;
+
 	ibuf.flags = 0;
- 
+
 	trace_gasket_ioctl_page_table_data(ibuf.base.page_table_index,
 					   ibuf.base.size,
 					   ibuf.base.host_address,
@@ -175,14 +175,14 @@ static int gasket_map_buffers_flags(struct gasket_dev *gasket_dev,
 	struct gasket_page_table_ioctl_flags ibuf;
 
 	if (copy_from_user(&ibuf, argp, sizeof(struct gasket_page_table_ioctl_flags)))
- 		return -EFAULT;
- 
+		return -EFAULT;
+
 	trace_gasket_ioctl_page_table_flags_data(ibuf.base.page_table_index,
 						 ibuf.base.size,
 						 ibuf.base.host_address,
 						 ibuf.base.device_address,
 						 ibuf.flags);
- 
+
 	return gasket_map_buffers_common(gasket_dev, &ibuf);
 }
 
