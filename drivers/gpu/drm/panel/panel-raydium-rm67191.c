@@ -220,6 +220,7 @@ static int rad_panel_prepare(struct drm_panel *panel)
 	struct rad_panel *rad = to_rad_panel(panel);
 	struct mipi_dsi_device *dsi = rad->dsi;
 	struct device *dev = &dsi->dev;
+	u16 brightness;
 	int ret;
 
 	if (rad->prepared)
@@ -283,7 +284,8 @@ static int rad_panel_prepare(struct drm_panel *panel)
 		goto fail;
 	}
 	/* Set display brightness */
-	ret = mipi_dsi_dcs_set_display_brightness(dsi, 0x20);
+	brightness = rad->backlight->props.brightness;
+	ret = mipi_dsi_dcs_set_display_brightness(dsi, brightness);
 	if (ret < 0) {
 		DRM_DEV_ERROR(dev, "Failed to set display brightness (%d)\n",
 			      ret);

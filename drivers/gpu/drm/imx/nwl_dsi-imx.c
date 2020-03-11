@@ -81,6 +81,7 @@ struct imx_mipi_dsi {
 	struct regmap			*mux_sel;
 
 	/* Optional clocks */
+	struct clk			*clk_lcdif;
 	struct clk_config		*clk_config;
 	size_t				clk_num;
 
@@ -479,6 +480,9 @@ static void imx_nwl_dsi_enable(struct imx_mipi_dsi *dsi)
 
 	DRM_DEV_DEBUG_DRIVER(dev, "id = %s\n", (dsi->instance)?"DSI1":"DSI0");
 
+	if (dsi->clk_lcdif)
+		clk_prepare_enable(dsi->clk_lcdif);
+
 	/*
 	 * TODO: we are doing this here, because the ADV7535 which is a drm
 	 * bridge, may change the DSI parameters in mode_set. One of the
@@ -540,6 +544,9 @@ static void imx_nwl_dsi_disable(struct imx_mipi_dsi *dsi)
 	devtype->poweroff(dsi);
 
 	imx_nwl_dsi_set_clocks(dsi, false);
+
+	if (dsi->clk_lcdif)
+		clk_disable_unprepare(dsi->clk_lcdif);
 
 	release_bus_freq(BUS_FREQ_HIGH);
 
@@ -792,6 +799,14 @@ static int imx_nwl_dsi_parse_of(struct device *dev, bool as_bridge)
 			clk_id, clk_get_rate(clk));
 		dsi->clk_config[i].clk = clk;
 	}
+
+	/*
+	 * the MIPI Reset Synchronizer block depends on this clock. So, we will
+	 * use this clock when we need to reset (or take out of reset) MIPI PHY
+	 */
+	dsi->clk_lcdif = devm_clk_get(dev, "lcdif");
+	if (IS_ERR(dsi->clk_lcdif))
+		dsi->clk_lcdif = NULL;
 
 	dsi->tx_ulps_reg = devtype->tx_ulps_reg;
 	dsi->pxl2dpi_reg = devtype->pxl2dpi_reg;
