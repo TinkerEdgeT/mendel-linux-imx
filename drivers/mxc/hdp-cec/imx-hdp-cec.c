@@ -277,7 +277,7 @@ int imx_cec_register(struct imx_cec_dev *cec)
 
 	cec->adap = cec_allocate_adapter(&imx_cec_adap_ops, cec,
 					 CEC_NAME,
-					 CEC_CAP_PHYS_ADDR | CEC_CAP_LOG_ADDRS |
+					 CEC_CAP_LOG_ADDRS |
 					 CEC_CAP_TRANSMIT | CEC_CAP_PASSTHROUGH
 					 | CEC_CAP_RC, 1);
 	ret = PTR_ERR_OR_ZERO(cec->adap);

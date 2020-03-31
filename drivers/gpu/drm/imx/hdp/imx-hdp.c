@@ -21,6 +21,7 @@
 #include <linux/of.h>
 #include <linux/irq.h>
 #include <linux/of_device.h>
+#include <media/cec.h>
 
 #include "imx-hdp.h"
 #include "imx-hdmi.h"
@@ -28,6 +29,7 @@
 #include "imx-hdcp-private.h"
 #include "imx-dp.h"
 #include "../imx-drm.h"
+#include "../../../../mxc/hdp-cec/imx-hdp-cec.h"
 
 #define B0_SILICON_ID			0x11
 
@@ -872,12 +874,16 @@ static int imx_hdp_connector_get_modes(struct drm_connector *connector)
 	struct imx_hdp *hdp = container_of(connector, struct imx_hdp,
 					   connector);
 	struct edid *edid;
+	struct imx_cec_dev *cec = &hdp->cec;
+	struct cec_adapter *adap;
+	u16 pa = CEC_PHYS_ADDR_INVALID;
 	int num_modes = 0;
 
 	if (!hdp->no_edid) {
 		edid = drm_do_get_edid(connector, hdp->ops->get_edid_block,
 				       &hdp->state);
 		if (edid) {
+			pa = cec_get_edid_phys_addr((const u8 *)edid,EDID_LENGTH * (edid->extensions + 1), NULL);
 			dev_info(hdp->dev, "%x,%x,%x,%x,%x,%x,%x,%x\n",
 				 edid->header[0], edid->header[1],
 				 edid->header[2], edid->header[3],
@@ -903,6 +909,13 @@ static int imx_hdp_connector_get_modes(struct drm_connector *connector)
 		dev_warn(hdp->dev,
 			 "No EDID function, use default video mode\n");
 		num_modes = imx_hdp_default_video_modes(connector);
+	}
+	DRM_INFO("HDMI/DP physical address: %x.%x.%x.%x\n",cec_phys_addr_exp(pa));
+	adap = cec->adap;
+	if(PTR_ERR_OR_ZERO(adap)) {
+		DRM_INFO("Get cec adapter fail!\n");
+	} else {
+		cec_s_phys_addr(adap, pa, false);
 	}
 
 	return num_modes;
@@ -1391,6 +1404,9 @@ static void hotplug_work_func(struct work_struct *work)
 					   struct imx_hdp,
 					   hotplug_work.work);
 	struct drm_connector *connector = &hdp->connector;
+	struct imx_cec_dev *cec = &hdp->cec;
+	struct cec_adapter *adap;
+	u16 pa = CEC_PHYS_ADDR_INVALID;
 
 	drm_helper_hpd_irq_event(connector->dev);
 
@@ -1406,6 +1422,12 @@ static void hotplug_work_func(struct work_struct *work)
 	} else if (connector->status == connector_status_disconnected) {
 		/* Cable Disconnedted  */
 		DRM_INFO("HDMI/DP Cable Plug Out\n");
+		adap = cec->adap;
+		if(PTR_ERR_OR_ZERO(adap)) {
+			DRM_INFO("Get cec adapter fail!\n");
+		} else {
+			cec_s_phys_addr(adap, pa, false);
+		}
 		enable_irq(hdp->irq[HPD_IRQ_IN]);
 	}
 }
