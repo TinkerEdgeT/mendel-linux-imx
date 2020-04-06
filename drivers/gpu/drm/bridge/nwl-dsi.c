@@ -1399,6 +1399,7 @@ static const struct drm_bridge_funcs nwl_dsi_bridge_funcs = {
 };
 
 extern int tinker_mcu_is_connected(void);
+extern int tinker_mcu_ili9881c_is_connected(void);
 static int nwl_dsi_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -1407,8 +1408,8 @@ static int nwl_dsi_probe(struct platform_device *pdev)
 	struct resource *res;
 	int ret;
 
-	if(!tinker_mcu_is_connected()) {
-		printk("tc358762 panel is not connected, dsi bridge probe stop\n");
+	if(!tinker_mcu_is_connected() && !tinker_mcu_ili9881c_is_connected()) {
+		printk("tc358762 panel  and  ili9881c is not connected, dsi bridge probe stop\n");
 		return -ENODEV;
 	}
 

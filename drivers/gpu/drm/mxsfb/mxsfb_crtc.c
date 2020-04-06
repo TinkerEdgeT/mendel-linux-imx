@@ -371,6 +371,11 @@ static void mxsfb_crtc_mode_set_nofb(struct mxsfb_drm_private *mxsfb)
 	DRM_DEV_DEBUG_DRIVER(mxsfb->dev,
 		"Mode flags: 0x%08X\n", m->flags);
 
+	printk( "Pixel clock: %dkHz (actual: %dkHz)\n",
+		m->crtc_clock, (int)(clk_get_rate(mxsfb->clk) / 1000));
+	printk( "Connector bus_flags: 0x%08X\n", bus_flags);
+	printk( "Mode flags: 0x%08X\n", m->flags);
+
 	writel(TRANSFER_COUNT_SET_VCOUNT(m->crtc_vdisplay) |
 	       TRANSFER_COUNT_SET_HCOUNT(m->crtc_hdisplay),
 	       mxsfb->base + mxsfb->devdata->transfer_count);

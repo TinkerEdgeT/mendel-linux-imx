@@ -278,11 +278,8 @@
 	status = "okay";
 
 	panel@0 {
-		compatible = "asus,tc358762";
+		compatible = "asus-dsi-panel";
 		reg = <0>;
-		dsi-lanes = <1>;
-		panel-width-mm = <68>;
-		panel-height-mm = <121>;
 		port {
 			panel1_in: endpoint {
 				remote-endpoint = <&mipi_dsi_bridge_out>;
@@ -327,6 +324,11 @@
 	tinker_mcu: tinker_mcu@45 {
 		compatible = "tinker_mcu";
 		reg = <0x45>;
+	};
+
+	tinker_mcu_ili9881c: tinker_mcu_ili9881c@36 {
+		compatible = "tinker_mcu_ili9881c";
+		reg = <0x36>;
 	};
 
 	power_monitor_a: power_monitor_a@40 {
