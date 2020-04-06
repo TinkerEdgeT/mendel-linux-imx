@@ -504,6 +504,7 @@ static const struct of_device_id mxsfb_dt_ids[] = {
 MODULE_DEVICE_TABLE(of, mxsfb_dt_ids);
 
 extern int tinker_mcu_is_connected(void);
+extern int tinker_mcu_ili9881c_is_connected(void);
 static int mxsfb_probe(struct platform_device *pdev)
 {
 	struct drm_device *drm;
@@ -511,8 +512,8 @@ static int mxsfb_probe(struct platform_device *pdev)
 			of_match_device(mxsfb_dt_ids, &pdev->dev);
 	int ret;
 
-	if(!tinker_mcu_is_connected()) {
-		printk("tc358762 panel is not connected, lcdif probe stop\n");
+	if(!tinker_mcu_is_connected() && !tinker_mcu_ili9881c_is_connected()) {
+		printk("tc358762 panel and ili9881c is not connected, lcdif probe stop\n");
 		return -ENODEV;
 	}
 

@@ -25,11 +25,14 @@
 #include <linux/fb.h>
 
 #define BL_DEBUG 0
-static struct tinker_mcu_data *g_mcu_data;
+static struct tinker_mcu_data *g_mcu_ili9881c_data;
 static int connected = 0;
 static int lcd_bright_level = 0;
+int lcd_size_flag = 0;
 static struct backlight_device *bl = NULL;
 
+#define MAX_MCU_ILI9881C_PWM_WORKAROUND 	(9)
+#define MAX_MCU_ILI9881C_PWM 	(31)
 #define MAX_BRIGHENESS 		(255)
 
 static int is_hex(char num)
@@ -113,7 +116,7 @@ static int init_cmd_check(struct tinker_mcu_data *mcu_data)
 	int ret;
 	char recv_buf[1] = {0};
 
-	ret = send_cmds(mcu_data->client, "80");
+	ret = send_cmds(mcu_data->client, "04");
 	if (ret < 0)
 		goto error;
 
@@ -122,34 +125,39 @@ static int init_cmd_check(struct tinker_mcu_data *mcu_data)
 		goto error;
 
 	LOG_INFO("recv_cmds: 0x%X\n", recv_buf[0]);
-	if (recv_buf[0] != 0xDE && recv_buf[0] != 0xC3) {
-		LOG_ERR("read wrong info\n");
-		ret = -EINVAL;
-		goto error;
+	printk("****lcd size value is: 0x%X\n", recv_buf[0]);
 
-	}
+	if(recv_buf[0]==0x85)
+		lcd_size_flag = 0;
+	else if(recv_buf[0]==0x89)
+		lcd_size_flag = 1;
+	else if(recv_buf[0]==0x8d)
+		lcd_size_flag = 2;
+
 	return 0;
 
 error:
 	return ret;
 }
 
-int tinker_mcu_screen_power_up(void)
+int tinker_mcu_ili9881c_screen_power_up(void)
 {
 	if (!connected)
 		return -ENODEV;
-
+printk("tinker_mcu_ili9881c_screen_power_up\n");
 	LOG_INFO("\n");
-	send_cmds(g_mcu_data->client, "8500");
-	msleep(800);
-	send_cmds(g_mcu_data->client, "8501");
-	send_cmds(g_mcu_data->client, "8104");
+	send_cmds(g_mcu_ili9881c_data->client, "0503");
+	msleep(20);
+	send_cmds(g_mcu_ili9881c_data->client, "0500");
+	msleep(20);
+	send_cmds(g_mcu_ili9881c_data->client, "0503");
+	msleep(200);
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(tinker_mcu_screen_power_up);
+EXPORT_SYMBOL_GPL(tinker_mcu_ili9881c_screen_power_up);
 
-int tinker_mcu_set_bright(int bright)
+int tinker_mcu_ili9881c_set_bright(int bright)
 {
 	unsigned char cmd[2];
 	int ret;
@@ -157,15 +165,21 @@ int tinker_mcu_set_bright(int bright)
 	if (!connected)
 		return -ENODEV;
 
-	if (bright > 0xff || bright < 0)
+	if (lcd_bright_level == bright)
+		return 0;
+
+	if (bright > MAX_MCU_ILI9881C_PWM || bright < 0)
 		return -EINVAL;
 
 	if(BL_DEBUG) LOG_INFO("set bright = 0x%x\n", bright);
 
-	cmd[0] = 0x86;
-	cmd[1] = bright;
+	cmd[0] = 0x06;
+	if (bright > 0)
+	cmd[1] = bright | 0x80;
+	else
+		cmd[1] = 0;
 
-	ret = i2c_master_send(g_mcu_data->client, cmd, 2);
+	ret = i2c_master_send(g_mcu_ili9881c_data->client, cmd, 2);
 	if (ret <= 0) {
 		LOG_ERR("send command failed, ret = %d\n", ret);
 		return ret != 0 ? ret : -ECOMM;
@@ -175,62 +189,79 @@ int tinker_mcu_set_bright(int bright)
 
 	return 0;
 }
-EXPORT_SYMBOL_GPL(tinker_mcu_set_bright);
+EXPORT_SYMBOL_GPL(tinker_mcu_ili9881c_set_bright);
 
-int tinker_mcu_get_brightness(void)
+int tinker_mcu_ili9881c_get_brightness(void)
 {
 	return lcd_bright_level;
 }
-EXPORT_SYMBOL_GPL(tinker_mcu_get_brightness);
+EXPORT_SYMBOL_GPL(tinker_mcu_ili9881c_get_brightness);
 
-static int tinker_mcu_bl_get_brightness(struct backlight_device *bd)
+static int tinker_mcu_ili9881c_bl_get_brightness(struct backlight_device *bd)
 {
 	return lcd_bright_level;
+	//return bd->props.brightness;
 }
 
- int tinker_mcu_bl_update_status(struct backlight_device * bd)
+ int tinker_mcu_ili9881c_bl_update_status(struct backlight_device * bd)
  {
 	int brightness = bd->props.brightness;
 
 	if (brightness > MAX_BRIGHENESS)
 		brightness = MAX_BRIGHENESS;
-
 	if (brightness <= 0)
 		brightness = 1;
+
+	if ( brightness > 0) {
+		brightness *= 12;
+		brightness /= 100;
+		brightness += 1;
+	}
+
+	if (brightness > MAX_MCU_ILI9881C_PWM)
+		brightness =MAX_MCU_ILI9881C_PWM;
+	if (brightness < 0)
+		brightness = 1;
+
+	if ((lcd_size_flag ==2) && (brightness > MAX_MCU_ILI9881C_PWM_WORKAROUND))
+		brightness = MAX_MCU_ILI9881C_PWM_WORKAROUND;
 
 	if (bd->props.power != FB_BLANK_UNBLANK)
 		brightness = 0;
 
+	//if (bd->props.fb_blank != FB_BLANK_UNBLANK)
+	//	brightness = 0;
+
 	if (bd->props.state & BL_CORE_SUSPENDED)
 		brightness = 0;
 
-	LOG_INFO("tinker_mcu_bl_update_status  brightness=%d power=%d fb_blank=%d state =%d  bd->props.brightness=%d\n", brightness, bd->props.power, bd->props.fb_blank, bd->props.state , bd->props.brightness);
-	return tinker_mcu_set_bright(brightness);
-}
+	LOG_INFO("tinker_mcu_ili9881c_bl_update_status  brightness=%d power=%d fb_blank=%d state =%d  bd->props.brightness=%d\n", brightness, bd->props.power, bd->props.fb_blank, bd->props.state , bd->props.brightness);
+	return tinker_mcu_ili9881c_set_bright(brightness);
+ }
 
-static const struct backlight_ops tinker_mcu_bl_ops = {
-	.get_brightness	= tinker_mcu_bl_get_brightness,//actual_brightness_show
-	.update_status	= tinker_mcu_bl_update_status,
+static const struct backlight_ops tinker_mcu_ili9881c_bl_ops = {
+	.get_brightness	= tinker_mcu_ili9881c_bl_get_brightness,//actual_brightness_show
+	.update_status	= tinker_mcu_ili9881c_bl_update_status,
 	.options 			= BL_CORE_SUSPENDRESUME,
 };
 
-struct backlight_device * tinker_mcu_get_backlightdev(void)
+struct backlight_device * tinker_mcu_ili9881c_get_backlightdev(void)
 {
 	if (!connected) {
-		printk("tinker_mcu_get_backlightdev is not ready\n");
+		printk("tinker_mcu_ili9881c_get_backlightdev is not ready");
 		return NULL;
 	}
 	return bl;
 }
 
-static ssize_t tinker_mcu_bl_show(struct device *dev, struct device_attribute *attr, char *buf)
+static ssize_t tinker_mcu_ili9881c_bl_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
-	if(BL_DEBUG) LOG_INFO("tinker_mcu_bl_show, bright = 0x%x\n", lcd_bright_level);
+	if(BL_DEBUG) LOG_INFO("tinker_mcu_ili9881c_bl_show, bright = 0x%x\n", lcd_bright_level);
 
 	return sprintf(buf, "%d\n", lcd_bright_level);
 }
 
-static ssize_t tinker_mcu_bl_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
+static ssize_t tinker_mcu_ili9881c_bl_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count)
 {
 	int value;
 
@@ -239,19 +270,19 @@ static ssize_t tinker_mcu_bl_store(struct device *dev, struct device_attribute *
 	if((value < 0) || (value > MAX_BRIGHENESS)) {
 		LOG_ERR("Invalid value for backlight setting, value = %d\n", value);
 	} else
-		tinker_mcu_set_bright(value);
+		tinker_mcu_ili9881c_set_bright(value);
 
 	return strnlen(buf, count);
 }
-static DEVICE_ATTR(tinker_mcu_bl, S_IRUGO | S_IWUSR, tinker_mcu_bl_show, tinker_mcu_bl_store);
+static DEVICE_ATTR(tinker_mcu_ili9881c_bl, S_IRUGO | S_IWUSR, tinker_mcu_ili9881c_bl_show, tinker_mcu_ili9881c_bl_store);
 
-int tinker_mcu_is_connected(void)
+int tinker_mcu_ili9881c_is_connected(void)
 {
 	return connected;
 }
-EXPORT_SYMBOL_GPL(tinker_mcu_is_connected);
+EXPORT_SYMBOL_GPL(tinker_mcu_ili9881c_is_connected);
 
-static int tinker_mcu_probe(struct i2c_client *client,
+static int tinker_mcu_ili9881c_probe(struct i2c_client *client,
 			const struct i2c_device_id *id)
 {
 	struct tinker_mcu_data *mcu_data;
@@ -273,7 +304,7 @@ static int tinker_mcu_probe(struct i2c_client *client,
 
 	mcu_data->client = client;
 	i2c_set_clientdata(client, mcu_data);
-	g_mcu_data = mcu_data;
+	g_mcu_ili9881c_data = mcu_data;
 
 	ret = init_cmd_check(mcu_data);
 	if (ret < 0) {
@@ -281,21 +312,21 @@ static int tinker_mcu_probe(struct i2c_client *client,
 		goto error;
 	}
 	connected = 1;
+        printk("find panel mcu_ili9881c\n");
 
 	memset(&props, 0, sizeof(props));
 	props.type = BACKLIGHT_RAW;
 	props.max_brightness = MAX_BRIGHENESS;
 
 	bl = backlight_device_register("panel_backlight", NULL, NULL,
-					   &tinker_mcu_bl_ops, &props);
+					   &tinker_mcu_ili9881c_bl_ops, &props);
 	if (IS_ERR(bl)) {
 		pr_err("unable to register backlight device\n");
 	}
-	printk("find panel mcu\n");
 
-	ret = device_create_file(&client->dev, &dev_attr_tinker_mcu_bl);
+	ret = device_create_file(&client->dev, &dev_attr_tinker_mcu_ili9881c_bl);
 	if (ret != 0) {
-		dev_err(&client->dev, "Failed to create tinker_mcu_bl sysfs files %d\n", ret);
+		dev_err(&client->dev, "Failed to create tinker_mcu_ili9881c_bl sysfs files %d\n", ret);
 		return ret;
 	}
 
@@ -306,7 +337,7 @@ error:
 	return ret;
 }
 
-static int tinker_mcu_remove(struct i2c_client *client)
+static int tinker_mcu_ili9881c_remove(struct i2c_client *client)
 {
 	struct tinker_mcu_data *mcu_data = i2c_get_clientdata(client);
 	connected = 0;
@@ -314,20 +345,20 @@ static int tinker_mcu_remove(struct i2c_client *client)
 	return 0;
 }
 
-static const struct i2c_device_id tinker_mcu_id[] = {
-	{"tinker_mcu", 0},
+static const struct i2c_device_id tinker_mcu_ili9881c_id[] = {
+	{"tinker_mcu_ili9881c", 0},
 	{},
 };
 
-static struct i2c_driver tinker_mcu_driver = {
+static struct i2c_driver tinker_mcu_ili9881c_driver = {
 	.driver = {
-		.name = "tinker_mcu",
+		.name = "tinker_mcu_ili9881c",
 	},
-	.probe = tinker_mcu_probe,
-	.remove = tinker_mcu_remove,
-	.id_table = tinker_mcu_id,
+	.probe = tinker_mcu_ili9881c_probe,
+	.remove = tinker_mcu_ili9881c_remove,
+	.id_table = tinker_mcu_ili9881c_id,
 };
-module_i2c_driver(tinker_mcu_driver);
+module_i2c_driver(tinker_mcu_ili9881c_driver);
 
-MODULE_DESCRIPTION("Tinker Board TouchScreen MCU driver");
+MODULE_DESCRIPTION("Tinker Board TouchScreen MCU ili9881c driver");
 MODULE_LICENSE("GPL v2");

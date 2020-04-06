@@ -145,4 +145,14 @@ config DRM_PANEL_TOSHIBA_TC358762
 	  Say Y here if you want to enable support for toshiba tc358762 panel.
 	  To compile this driver as a module, choose M here.
 
+config DRM_PANEL_ASUS_ILI9881C
+	tristate "support for ASUS ili9881c panel"
+	depends on OF && I2C
+	depends on DRM_MIPI_DSI
+	select TINKER_MCU
+	select VIDEOMODE_HELPERS
+	help
+	  Say Y here if you want to enable support for ASUS ili9881c panel.
+	  To compile this driver as a module, choose M here.
+
 endmenu
