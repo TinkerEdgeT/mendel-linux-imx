@@ -671,7 +671,6 @@
 		assigned-clock-rates = <80000000>;
 		phys = <&mipi_dsi_phy>;
 		phy-names = "dphy";
-		no_clk_reset;
 		status = "disabled";
 
 		port@0 {
@@ -696,7 +695,6 @@
 		mux-sel = <&gpr>;
 		phys = <&mipi_dsi_phy>;
 		phy-names = "dphy";
-		no_clk_reset;
 		status = "disabled";
 
 		port@0 {

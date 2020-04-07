@@ -223,6 +223,10 @@
 // 	status = "okay";
 // };
 
+&irqsteer_dcss {
+	status = "okay";
+};
+
 &dcss {
 	disp-dev = "hdmi_disp";
 	status = "okay";
@@ -230,16 +234,6 @@
 
 &lcdif {
 	status = "okay";
-
-	assigned-clocks = <&clk IMX8MQ_CLK_LCDIF_PIXEL_SRC>,
-			  <&clk IMX8MQ_VIDEO_PLL1_REF_SEL>,
-			  <&clk IMX8MQ_VIDEO_PLL1>;
-	assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>,
-				 <&clk IMX8MQ_CLK_25M>;
-	assigned-clock-rate = <120000000>,
-			      <0>,
-			      <599999999>;
-
 	port@0 {
 		lcdif_mipi_dsi: mipi-dsi-endpoint {
 			remote-endpoint = <&mipi_dsi_in>;
@@ -255,17 +249,7 @@
 	status = "okay";
 	as_bridge;
 	sync-pol = <1>;
-	assigned-clocks = <&clk IMX8MQ_CLK_DSI_PHY_REF_SRC>,
-			  <&clk IMX8MQ_CLK_DSI_CORE_SRC>,
-			  <&clk IMX8MQ_VIDEO_PLL1_REF_SEL>,
-			  <&clk IMX8MQ_VIDEO_PLL1>;
-	assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>,
-				 <&clk IMX8MQ_SYS1_PLL_266M>,
-				 <&clk IMX8MQ_CLK_25M>;
-	assigned-clock-rates = <24000000>,
-			       <266000000>,
-			       <0>,
-			       <599999999>;
+	pwr-delay = <10>;
 
 	port@1 {
 		mipi_dsi_in: endpoint {
@@ -276,6 +260,7 @@
 
 &mipi_dsi_bridge {
 	status = "okay";
+	clock-drop-level = <0>;
 
 	panel@0 {
 		compatible = "asus-dsi-panel";

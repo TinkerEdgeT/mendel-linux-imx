@@ -694,21 +694,6 @@
 			       <599999999>;
 };
 
-&mipi_dsi {
-	status = "disabled";
-	assigned-clocks = <&clk IMX8MQ_CLK_DSI_PHY_REF>,
-			  <&clk IMX8MQ_CLK_DSI_CORE>,
-			  <&clk IMX8MQ_VIDEO_PLL1_REF_SEL>,
-			  <&clk IMX8MQ_VIDEO_PLL1>;
-	assigned-clock-parents = <&clk IMX8MQ_VIDEO_PLL1_OUT>,
-				 <&clk IMX8MQ_SYS1_PLL_266M>,
-				 <&clk IMX8MQ_CLK_25M>;
-	assigned-clock-rates = <24000000>,
-			       <266000000>,
-			       <0>,
-			       <599999999>;
-};
-
 &cpu_thermal {
 	trips {
 		fan_toggle0: trip4 {
