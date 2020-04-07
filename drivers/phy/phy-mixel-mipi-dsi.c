@@ -121,8 +121,6 @@ int mixel_phy_mipi_set_phy_speed(struct phy *phy,
 	if (bit_clk > DATA_RATE_MAX_SPEED || bit_clk < DATA_RATE_MIN_SPEED)
 		return -EINVAL;
 
-	best_match = 1;
-
 	/* simulated fixed point with 3 decimals */
 	div_rate = (bit_clk * 1000) / ref_clk;
 

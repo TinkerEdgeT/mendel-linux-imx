@@ -474,7 +474,7 @@ static const struct ili9881c_instr ili9881c_init_1[] = {//5-inch
 extern struct backlight_device * tinker_mcu_ili9881c_get_backlightdev(void);
 extern int tinker_mcu_ili9881c_set_bright(int bright);
 extern void tinker_mcu_ili9881c_screen_power_up(void);
-extern void tinker_ft5406_start_polling(void);
+//extern void tinker_ft5406_start_polling(void);
 
 static inline struct ili9881c *panel_to_ili9881c(struct drm_panel *panel)
 {
@@ -620,7 +620,7 @@ static int ili9881c_enable(struct drm_panel *panel)
 		tinker_mcu_ili9881c_set_bright(0x1F);
 	}
 
-	tinker_ft5406_start_polling();
+	//tinker_ft5406_start_polling();
 
 	enable = 1;
 	printk("ili9881c_enable-\n");
@@ -642,15 +642,13 @@ static int ili9881c_disable(struct drm_panel *panel)
 		tinker_mcu_ili9881c_set_bright(0x00);
 	}
 
-	return 0;
+	return mipi_dsi_dcs_set_display_off(ctx->dsi);
 }
 
 static int ili9881c_unprepare(struct drm_panel *panel)
 {
 	struct ili9881c *ctx = panel_to_ili9881c(panel);
 	pr_info("%s\n", __func__);
-	mipi_dsi_dcs_set_display_off(ctx->dsi);
-	msleep(20);
 	mipi_dsi_dcs_enter_sleep_mode(ctx->dsi);
 	msleep(120);
 	if (ctx->power) {
@@ -661,13 +659,13 @@ static int ili9881c_unprepare(struct drm_panel *panel)
 	return 0;
 }
 
-static const struct display_timing asus_ili9881c_default_mode_7inch = {
-	.pixelclock = { 66800000, 66800000, 66800000 },
-	.hactive = { 720, 720, 720 },
-	.hfront_porch = { 55, 55, 55 },
+static const struct display_timing asus_ili9881c_default_mode_10inch = {
+	.pixelclock = { 74250000, 74250000, 74250000 },
+	.hactive = { 1280, 1280, 1280},
+	.hfront_porch = { 85, 85, 85 },
 	.hsync_len = { 8, 8, 8 },
-	.hback_porch = { 55, 55, 55 },
-	.vactive = { 1280, 1280, 1280 },
+	.hback_porch = {85, 85, 85 },
+	.vactive = { 800, 800, 800 },
 	.vfront_porch = { 20, 20, 20 },
 	.vsync_len = { 8, 8, 8 },
 	.vback_porch = { 20, 20, 20 },
@@ -677,16 +675,16 @@ static const struct display_timing asus_ili9881c_default_mode_7inch = {
 			DISPLAY_FLAGS_PIXDATA_NEGEDGE,
 };
 
-static const struct display_timing asus_ili9881c_default_mode_10inch = {
-	.pixelclock = { 64000000, 64000000, 64000000 },
-	.hactive = { 1280, 1280, 1280},
-	.hfront_porch = { 45, 45, 45 },
-	.hsync_len = { 8, 8, 8 },
-	.hback_porch = {45, 45, 45 },
-	.vactive = { 800, 800, 800 },
-	.vfront_porch = { 20, 20, 20 },
+static const struct display_timing asus_ili9881c_default_mode_7inch = {
+	.pixelclock = { 90000000, 90000000, 90000000 },
+	.hactive = { 720, 720, 720 },
+	.hfront_porch = { 500, 500, 500 },
+	.hsync_len = { 9, 9, 9 },
+	.hback_porch = { 50, 50, 50 },
+	.vactive = { 1280, 1280, 1280 },
+	.vfront_porch = { 10, 10, 10 },
 	.vsync_len = { 8, 8, 8 },
-	.vback_porch = { 20, 20, 20 },
+	.vback_porch = { 10, 10, 10 },
 	.flags = DISPLAY_FLAGS_HSYNC_LOW |
 			DISPLAY_FLAGS_VSYNC_LOW |
 			DISPLAY_FLAGS_DE_LOW |
@@ -746,12 +744,14 @@ int ili9881c_dsi_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
 	struct device_node *np = dev->of_node;
+	struct device_node *backlight_np;
 	struct ili9881c *ctx;
 	int ret;
 	pr_info("%s\n", __func__);
 	ctx = devm_kzalloc(&dsi->dev, sizeof(*ctx), GFP_KERNEL);
 	if (!ctx)
 		return -ENOMEM;
+
 	mipi_dsi_set_drvdata(dsi, ctx);
 
 	ret = of_get_videomode(np, &ctx->vm, 0);
@@ -776,17 +776,10 @@ int ili9881c_dsi_probe(struct mipi_dsi_device *dsi)
 		return PTR_ERR(ctx->power);
 	}
 
-
-	/*ctx->reset = devm_gpiod_get(&dsi->dev, "reset", GPIOD_OUT_LOW);
-	if (IS_ERR(ctx->reset)) {
-		dev_err(&dsi->dev, "Couldn't get our reset GPIO\n");
-		return PTR_ERR(ctx->reset);
-	}*/
-
-	np = of_parse_phandle(dsi->dev.of_node, "backlight", 0);
-	if (np) {
-		ctx->backlight = of_find_backlight_by_node(np);
-		of_node_put(np);
+	backlight_np = of_parse_phandle(dsi->dev.of_node, "backlight", 0);
+	if (backlight_np) {
+		ctx->backlight = of_find_backlight_by_node(backlight_np);
+		of_node_put(backlight_np);
 
 		if (!ctx->backlight)
 			return -EPROBE_DEFER;
@@ -800,16 +793,15 @@ int ili9881c_dsi_probe(struct mipi_dsi_device *dsi)
 			untile panel init  successful. SO, we CAN NOT return  error.
 			*/
 		} else {
-			printk("t ili9881c_dsi_probe get backligh device successful\n");
+			printk("ili9881c_dsi_probe get backligh device successful\n");
 			ctx->backlight->props.brightness = 255;
 		}
 	}
 
-
 	ret = drm_panel_add(&ctx->panel);
 	if (ret < 0)
 		return ret;
-	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_VIDEO_SYNC_PULSE |MIPI_DSI_MODE_EOT_PACKET| MIPI_DSI_MODE_LPM;
+	dsi->mode_flags = MIPI_DSI_MODE_VIDEO_BURST| MIPI_DSI_MODE_VIDEO_SYNC_PULSE;
 	dsi->format = MIPI_DSI_FMT_RGB888;
 	dsi->lanes = 2;
 

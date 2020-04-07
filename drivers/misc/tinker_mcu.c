@@ -134,16 +134,52 @@ error:
 	return ret;
 }
 
+int tinker_mcu_screen_power_off(void)
+{
+	int ret;
+
+	if (!connected)
+		return -ENODEV;
+
+	LOG_INFO("tinker_mcu_screen_power_off\n");
+	ret = send_cmds(g_mcu_data->client, "8500");
+	msleep(100);
+
+	return ret;
+}
+EXPORT_SYMBOL_GPL(tinker_mcu_screen_power_off);
+
 int tinker_mcu_screen_power_up(void)
 {
+	#define REG_PORTB "82"
+	char recv_buf[1] = {0};
+	int ret;
+	int i;
+
 	if (!connected)
 		return -ENODEV;
 
 	LOG_INFO("\n");
-	send_cmds(g_mcu_data->client, "8500");
-	msleep(800);
-	send_cmds(g_mcu_data->client, "8501");
-	send_cmds(g_mcu_data->client, "8104");
+	tinker_mcu_screen_power_off();
+
+	ret = send_cmds(g_mcu_data->client, "8501");
+	/* Wait for nPWRDWN to go low to indicate poweron is done. */
+	for (i = 0; i < 100; i++) {
+		 send_cmds(g_mcu_data->client, REG_PORTB);
+
+		ret = recv_cmds(g_mcu_data->client, recv_buf, 1);
+
+		LOG_INFO("recv_cmds: 0x%X\n", recv_buf[0]);
+		if (recv_buf[0] & 1) {
+			LOG_ERR("mtinker mcu power up successful\n");
+			break;
+
+		}
+	}
+
+	ret = send_cmds(g_mcu_data->client, "8104");
+
+	return ret;
 
 	return 0;
 }

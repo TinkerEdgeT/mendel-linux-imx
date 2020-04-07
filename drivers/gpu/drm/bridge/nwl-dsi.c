@@ -235,6 +235,7 @@ struct nwl_mipi_dsi {
 	u32				clk_drop_lvl;
 	bool				no_clk_reset;
 	bool				enabled;
+	bool				best_match;
 };
 
 static inline void nwl_dsi_write(struct nwl_mipi_dsi *dsi, u32 reg, u32 val)
@@ -460,7 +461,8 @@ static void nwl_dsi_init_interrupts(struct nwl_mipi_dsi *dsi)
 	nwl_dsi_write(dsi, IRQ_MASK2, 0x7);
 
 	irq_enable = ~(u32)(TX_PKT_DONE_MASK |
-			RX_PKT_HDR_RCVD_MASK);
+					RX_PKT_HDR_RCVD_MASK |
+					RX_PKT_PAYLOAD_DATA_RCVD_MASK);
 
 	nwl_dsi_write(dsi, IRQ_MASK, irq_enable);
 }
@@ -583,7 +585,7 @@ static struct mode_config *nwl_dsi_mode_probe(struct nwl_mipi_dsi *dsi,
 		ret = mixel_phy_mipi_set_phy_speed(dsi->phy,
 			bit_clk,
 			phyref_rates[i],
-			false);
+			dsi->best_match);
 
 		/* Pick the non-failing rate, and search for more */
 		if (!ret) {
@@ -607,6 +609,11 @@ static struct mode_config *nwl_dsi_mode_probe(struct nwl_mipi_dsi *dsi,
 			mode->hdisplay,
 			mode->vdisplay,
 			mode->clock);
+		printk("Cannot setup PHY for mode: %ux%u @%d kHz dsi->best_match=%d\n",
+			mode->hdisplay,
+			mode->vdisplay,
+			mode->clock,
+			dsi->best_match);
 
 		return NULL;
 	}
@@ -664,7 +671,7 @@ static bool nwl_dsi_bridge_mode_fixup(struct drm_bridge *bridge,
 
 	DRM_DEV_DEBUG_DRIVER(dsi->dev, "lanes=%u, data_rate=%lu\n",
 			     config->lanes, config->bitclock);
-	if (config->lanes < 2 || config->lanes > 4)
+	if (config->lanes < 1 || config->lanes > 4)
 		return false;
 
 	/* Max data rate for this controller is 1.5Gbps */
@@ -708,7 +715,7 @@ static void nwl_dsi_bridge_mode_set(struct drm_bridge *bridge,
 	mixel_phy_mipi_set_phy_speed(dsi->phy,
 			config->bitclock,
 			phy_rate,
-			false);
+			dsi->best_match);
 	clk_set_rate(dsi->phy_ref.clk, phy_rate);
 	actual_phy_rate = clk_get_rate(dsi->phy_ref.clk);
 	dsi->dsi_device->lanes = config->lanes;
@@ -993,7 +1000,8 @@ static void nwl_dsi_finish_transmission(struct nwl_mipi_dsi *dsi, u32 status)
 	if (xfer->direction == DSI_PACKET_SEND && status & TX_PKT_DONE) {
 		xfer->status = xfer->tx_len;
 		end_packet = true;
-	} else if (status & DPHY_DIRECTION && status & RX_PKT_HDR_RCVD)
+	} else if ((status & DPHY_DIRECTION && status & RX_PKT_HDR_RCVD) ||
+			(xfer->direction == DSI_PACKET_RECEIVE && status & RX_PKT_PAYLOAD_DATA_RCVD))
 		end_packet = nwl_dsi_read_packet(dsi, status);
 
 	if (end_packet)
@@ -1172,6 +1180,7 @@ static int nwl_dsi_connector_get_modes(struct drm_connector *connector)
 		nwl_dsi_setup_pll_config(config, true, dsi->clk_drop_lvl);
 		if (config->crtc_clock)
 			mode->crtc_clock = config->crtc_clock / 1000;
+		printk("nwl_dsi_connector_get_modes crtc_clock =%d   clock=%d\n", mode->crtc_clock  , mode->clock);
 	}
 
 	return num_modes;
@@ -1359,6 +1368,9 @@ phy_err:
 	devm_free_irq(dev, dsi->irq, dsi);
 }
 
+extern int tinker_mcu_is_connected(void);
+extern int tinker_mcu_ili9881c_is_connected(void);
+
 static void nwl_dsi_bridge_disable(struct drm_bridge *bridge)
 {
 	struct nwl_mipi_dsi *dsi = bridge->driver_private;
@@ -1398,8 +1410,6 @@ static const struct drm_bridge_funcs nwl_dsi_bridge_funcs = {
 	.detach = nwl_dsi_bridge_detach,
 };
 
-extern int tinker_mcu_is_connected(void);
-extern int tinker_mcu_ili9881c_is_connected(void);
 static int nwl_dsi_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
@@ -1483,6 +1493,11 @@ static int nwl_dsi_probe(struct platform_device *pdev)
 	dsi->no_clk_reset = of_property_read_bool(dev->of_node, "no_clk_reset");
 	of_property_read_u32(dev->of_node, "clock-drop-level",
 		&dsi->clk_drop_lvl);
+
+	if (tinker_mcu_is_connected())
+		dsi->best_match = true;
+	else
+		dsi->best_match = of_property_read_bool(dev->of_node, "best-match");
 
 	dsi->dev = dev;
 	platform_set_drvdata(pdev, dsi);
