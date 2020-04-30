@@ -108,19 +108,6 @@
 	};
 };
 
-&iomuxc {
-	imx8mq-phanbell {
-		pinctrl_sai2: sai2grp {
-			fsl,pins = <
-					MX8MQ_IOMUXC_SAI2_TXFS_SAI2_TX_SYNC     0xd6
-					MX8MQ_IOMUXC_SAI2_TXC_SAI2_TX_BCLK      0xd6
-					MX8MQ_IOMUXC_SAI2_MCLK_SAI2_MCLK        0xd6
-					MX8MQ_IOMUXC_SAI2_TXD0_SAI2_TX_DATA0    0xd6
-					MX8MQ_IOMUXC_GPIO1_IO08_GPIO1_IO8       0xd6
-				>;
-		};
-	};
-};
 
 &iomuxc {
 	imx8mq-phanbell {
@@ -149,18 +136,18 @@
 &pwm1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm1>;
-	status = "okay";
+	status = "disabled";
 };
 
 &pwm2 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_pwm2>;
-	status = "okay";
+	status = "disabled";
 };
 
-&pwm3 {
+&pwm4 {
 	pinctrl-names = "default";
-	pinctrl-0 = <&pinctrl_pwm3>;
+	pinctrl-0 = <&pinctrl_pwm4>;
 	status = "disabled";
 };
 
@@ -170,7 +157,7 @@
 	pinctrl-0 = <&pinctrl_ecspi1 &pinctrl_ecspi1_cs>;
 	cs-gpios = <&gpio5 9 GPIO_ACTIVE_HIGH>,
 		   <&gpio3 2 GPIO_ACTIVE_HIGH>;
-	status = "okay";
+	status = "disabled";
 
 	spidev@0 {
 		#address-cells = <1>;
@@ -212,6 +199,8 @@
 				MX8MQ_IOMUXC_SAI5_RXC_GPIO3_IO20		0x19
 				MX8MQ_IOMUXC_SAI5_RXD2_GPIO3_IO23		0x19
 				MX8MQ_IOMUXC_SAI5_MCLK_GPIO3_IO25		0x19
+				MX8MQ_IOMUXC_UART1_TXD_GPIO5_IO23		0x19
+				MX8MQ_IOMUXC_UART1_RXD_GPIO5_IO22		0x19
 			>;
 		};
 
@@ -227,9 +216,9 @@
 			>;
 		};
 
-		pinctrl_pwm3: pwm3 {
+		pinctrl_pwm4: pwm4 {
 			fsl,pins = <
-				MX8MQ_IOMUXC_GPIO1_IO14_PWM3_OUT		0x7f
+				MX8MQ_IOMUXC_SAI3_MCLK_PWM4_OUT		0x7f
 			>;
 		};
 		pinctrl_ecspi1: ecspi1grp {
