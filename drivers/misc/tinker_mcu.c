@@ -160,7 +160,6 @@ int tinker_mcu_screen_power_up(void)
 		return -ENODEV;
 
 	LOG_INFO("\n");
-	tinker_mcu_screen_power_off();
 
 	ret = send_cmds(g_mcu_data->client, "8501");
 	/* Wait for nPWRDWN to go low to indicate poweron is done. */
@@ -334,6 +333,8 @@ static int tinker_mcu_probe(struct i2c_client *client,
 		dev_err(&client->dev, "Failed to create tinker_mcu_bl sysfs files %d\n", ret);
 		return ret;
 	}
+
+	tinker_mcu_screen_power_off();
 
 	return 0;
 
