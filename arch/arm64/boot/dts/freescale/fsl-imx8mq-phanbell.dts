@@ -379,7 +379,7 @@
 };
 
 &usb_dwc3_0 {
-	extcon = <&typec_ptn5150>;
+	extcon = <&typec_it5201>;
 };
 
 &i2c3 {
@@ -398,15 +398,6 @@
 		interrupt-parent = <&gpio5>;
 		interrupts = <4 IRQ_TYPE_EDGE_BOTH>;
 		hp-detect-gpios = <&gpio5 4 GPIO_ACTIVE_HIGH>;
-	};
-
-	typec_ptn5150: ptn5150@3d {
-		compatible = "nxp,ptn5150a";
-		pinctrl-names = "default";
-		pinctrl-0 = <&pinctrl_typec>;
-		reg = <0x3d>;
-		interrupt-parent = <&gpio3>;
-		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
 	};
 };
 
@@ -432,6 +423,15 @@
 				remote-endpoint = <&mipi1_sensor_ep>;
 			};
 		};
+	};
+
+	typec_it5201: it5201@67 {
+		compatible = "ite,it5201";
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_typec>;
+		reg = <0x67>;
+		interrupt-parent = <&gpio3>;
+		interrupts = <0 IRQ_TYPE_EDGE_FALLING>;
 	};
 };
 
