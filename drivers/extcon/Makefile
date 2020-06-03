@@ -23,3 +23,4 @@ obj-$(CONFIG_EXTCON_SM5502)	+= extcon-sm5502.o
 obj-$(CONFIG_EXTCON_USB_GPIO)	+= extcon-usb-gpio.o
 obj-$(CONFIG_EXTCON_USBC_CROS_EC) += extcon-usbc-cros-ec.o
 obj-$(CONFIG_EXTCON_PTN5150)	+= extcon-ptn5150.o
+obj-$(CONFIG_EXTCON_IT5201)	+= extcon-it5201.o
