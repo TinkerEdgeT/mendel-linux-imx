@@ -674,7 +674,8 @@ static const struct ili9881c_instr ili9881c_init_1[] = {//5-inch
 
 extern struct backlight_device * tinker_mcu_ili9881c_get_backlightdev(void);
 extern int tinker_mcu_ili9881c_set_bright(int bright);
-extern void tinker_mcu_ili9881c_screen_power_up(void);
+extern int tinker_mcu_ili9881c_screen_power_up(void);
+extern int tinker_mcu_ili9881c_screen_power_off(void);
 //extern void tinker_ft5406_start_polling(void);
 
 static inline struct ili9881c *panel_to_ili9881c(struct drm_panel *panel)
@@ -1043,7 +1044,7 @@ void ili9881c_dsi_shutdown(struct mipi_dsi_device *dsi)
 	} else {
 		tinker_mcu_ili9881c_set_bright(0x00);
 	}
-
+         tinker_mcu_ili9881c_screen_power_off();
 }
 
 static const struct of_device_id ili9881c_of_match[] = {
