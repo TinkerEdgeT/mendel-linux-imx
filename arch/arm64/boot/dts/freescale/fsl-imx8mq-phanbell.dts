@@ -99,6 +99,12 @@
 			gpios = <&gpio4 28 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger="none";
 		};
+
+	hwid: gpio-hwid {
+		compatible = "gpio-hwid";
+		id0-gpios = <&gpio3 25 GPIO_ACTIVE_HIGH>;
+		id1-gpios = <&gpio3 23 GPIO_ACTIVE_HIGH>;
+		id2-gpios = <&gpio3 20 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -203,6 +209,9 @@
 				MX8MQ_IOMUXC_ECSPI2_MISO_GPIO5_IO12		0x19
 				MX8MQ_IOMUXC_ECSPI2_SS0_GPIO5_IO13		0x19
 				MX8MQ_IOMUXC_SAI5_RXD0_GPIO3_IO21		0x19
+				MX8MQ_IOMUXC_SAI5_RXC_GPIO3_IO20		0x19
+				MX8MQ_IOMUXC_SAI5_RXD2_GPIO3_IO23		0x19
+				MX8MQ_IOMUXC_SAI5_MCLK_GPIO3_IO25		0x19
 			>;
 		};
 
