@@ -557,6 +557,12 @@ config SND_SOC_IMX_DSP
 	  Say Y if you want to add support for SoC audio on an i.MX board with
 	  IMX DSP.
 
+config SND_SOC_HIFIBERRY_DACPLUS
+    tristate "Support for HifiBerry DAC+"
+    select SND_SOC_FSL_SAI
+    help
+      Say Y or M if you want to add support for HifiBerry DAC+.
+
 config SND_SOC_IMX_PDM_MIC
 	tristate "SoC Audio support for i.MX boards with PDM mic on SAI"
 	depends on OF
