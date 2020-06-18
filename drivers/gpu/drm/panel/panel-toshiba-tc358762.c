@@ -72,7 +72,7 @@ extern struct backlight_device * tinker_mcu_get_backlightdev(void);
 extern int tinker_mcu_set_bright(int bright);
 extern int tinker_mcu_screen_power_up(void);
 extern int tinker_mcu_screen_power_off(void);
-//extern void tinker_ft5406_start_polling(void);
+extern void tinker_ft5406_start_polling(void);
 
 static int tc358762_prepare(struct drm_panel *panel)
 {
@@ -118,8 +118,8 @@ static int tc358762_enable(struct drm_panel *panel)
 		 the flicker about 7 seconds */
                 //trigger_bridge = 0;
 
-		//msleep(100);
-		//tinker_ft5406_start_polling();
+		msleep(100);
+		tinker_ft5406_start_polling();
 	}
 
 	msleep(20);
