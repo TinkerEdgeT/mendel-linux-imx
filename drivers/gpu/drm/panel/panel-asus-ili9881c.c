@@ -676,7 +676,7 @@ extern struct backlight_device * tinker_mcu_ili9881c_get_backlightdev(void);
 extern int tinker_mcu_ili9881c_set_bright(int bright);
 extern int tinker_mcu_ili9881c_screen_power_up(void);
 extern int tinker_mcu_ili9881c_screen_power_off(void);
-//extern void tinker_ft5406_start_polling(void);
+extern void tinker_ft5406_start_polling(void);
 
 static inline struct ili9881c *panel_to_ili9881c(struct drm_panel *panel)
 {
@@ -831,7 +831,7 @@ static int ili9881c_enable(struct drm_panel *panel)
 		tinker_mcu_ili9881c_set_bright(0x1F);
 	}
 
-	//tinker_ft5406_start_polling();
+	tinker_ft5406_start_polling();
 
 	enable = 1;
 	printk("ili9881c_enable-\n");

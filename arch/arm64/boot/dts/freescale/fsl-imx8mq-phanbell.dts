@@ -341,6 +341,11 @@
 		reg = <0x36>;
 	};
 
+	tinker_ft5406: tinker_ft5406@38 {
+		compatible = "tinker_ft5406";
+		reg = <0x38>;
+	};
+
 	power_monitor_a: power_monitor_a@40 {
 		compatible = "ti,ina226";
 		reg = <0x40>;
