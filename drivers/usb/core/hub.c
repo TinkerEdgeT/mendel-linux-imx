@@ -1994,6 +1994,9 @@ void usb_set_device_state(struct usb_device *udev,
 	spin_unlock_irqrestore(&device_state_lock, flags);
 	if (wakeup >= 0)
 		device_set_wakeup_capable(&udev->dev, wakeup);
+
+	if (wakeup > 0)
+		device_wakeup_enable(&udev->dev);
 }
 EXPORT_SYMBOL_GPL(usb_set_device_state);
 
