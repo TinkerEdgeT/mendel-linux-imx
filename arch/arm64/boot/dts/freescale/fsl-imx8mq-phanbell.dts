@@ -60,10 +60,6 @@
 		protocol = <1>;
 	};
 
-	sound-ext-card {
-		status = "disabled";
-	};
-
 	busfreq {
 		status = "disabled";
 	};
@@ -318,10 +314,6 @@
 &sai1 {
 	pinctrl-names = "default";
 	pinctrl-0 = <&pinctrl_sai1>;
-	assigned-clocks = <&clk IMX8MQ_CLK_SAI1_SRC>,
-			<&clk IMX8MQ_CLK_SAI1_DIV>;
-	assigned-clock-parents = <&clk IMX8MQ_AUDIO_PLL1_OUT>;
-	assigned-clock-rates = <0>, <24576000>;
 	status = "okay";
 };
 
