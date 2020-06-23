@@ -99,6 +99,7 @@
 			gpios = <&gpio4 28 GPIO_ACTIVE_HIGH>;
 			linux,default-trigger="none";
 		};
+	};
 
 	hwid: gpio-hwid {
 		compatible = "gpio-hwid";
