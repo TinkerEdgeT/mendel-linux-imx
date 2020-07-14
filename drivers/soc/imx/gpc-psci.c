@@ -52,6 +52,8 @@ enum imx_gpc_pm_domain_state {
 static DEFINE_SPINLOCK(gpc_psci_lock);
 static DEFINE_MUTEX(gpc_pd_mutex);
 
+/* USB0 port power domain */
+static bool usb0_on = false;
 /* USB1 port power domain */
 static bool usb1_on = false;
 
@@ -205,6 +207,9 @@ static int imx_gpc_pd_power_on(struct generic_pm_domain *domain)
 	struct arm_smccc_res res;
 	int index, ret = 0;
 
+	if (usb0_on && pd->gpc_domain_id == 2)
+		return 0;
+
 	if (usb1_on && pd->gpc_domain_id == 3)
 		return 0;
 
@@ -228,6 +233,9 @@ static int imx_gpc_pd_power_on(struct generic_pm_domain *domain)
 		      GPC_PD_STATE_ON, 0, 0, 0, 0, &res);
 	mutex_unlock(&gpc_pd_mutex);
 
+	if (pd->gpc_domain_id == 2)
+		usb0_on = true;
+
 	if (pd->gpc_domain_id == 3)
 		usb1_on = true;
 
@@ -239,6 +247,9 @@ static int imx_gpc_pd_power_off(struct generic_pm_domain *domain)
 	struct imx_gpc_pm_domain *pd = to_imx_gpc_pm_domain(domain);
 	struct arm_smccc_res res;
 	int index, ret = 0;
+
+	if (pd->gpc_domain_id == 2)
+		return 0;
 
 	if (pd->gpc_domain_id == 3)
 		return 0;
