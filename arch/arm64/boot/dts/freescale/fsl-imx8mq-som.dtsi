@@ -49,7 +49,7 @@
 
 	apex_power {
 		compatible = "google,apex-power";
-		status = "okay";
+		status = "disabled";
 		power-supply = <&reg_apex>;
 	};
 
