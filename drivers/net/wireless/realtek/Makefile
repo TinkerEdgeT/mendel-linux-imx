@@ -7,3 +7,4 @@ obj-$(CONFIG_RTL8187)		+= rtl818x/
 obj-$(CONFIG_RTLWIFI)		+= rtlwifi/
 obj-$(CONFIG_RTL8XXXU)		+= rtl8xxxu/
 obj-$(CONFIG_RTL8812AU)		+= rtl8812AU_8821AU_linux/
+obj-$(CONFIG_RTL8814AU)		+= rtl8814au/
