@@ -1,0 +1,12 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "fsl,imx8mq-phanbell", "fsl,imx8mq";
+	fragment@0 {
+		target = <&uart3>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+};

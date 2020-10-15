@@ -17,6 +17,8 @@ obj-$(CONFIG_SGI_MBCS)		+= mbcs.o
 obj-$(CONFIG_BFIN_OTP)		+= bfin-otp.o
 obj-$(CONFIG_FSL_OTP)		+= fsl_otp.o
 
+obj-$(CONFIG_GOOGLE_APEX_POWER)	+= apex-power.o
+
 obj-$(CONFIG_PRINTER)		+= lp.o
 
 obj-$(CONFIG_APM_EMULATION)	+= apm-emulation.o

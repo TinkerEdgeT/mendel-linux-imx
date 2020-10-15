@@ -170,6 +170,24 @@ config PPDEV
 
 	  If unsure, say N.
 
+config GOOGLE_APEX_POWER
+	tristate "Google Apex TPU PCI-based power control"
+	depends on PCI
+	help
+	  Character device for managing the power of the Google Apex
+	  TPU.
+
+	  If you say Y here, a special character device node, /dev/apexp*
+	  will be created which exposes PCI power control operations to
+	  user space. This is used to reduce leakage current by disabling
+	  power to the TPU completely via the PCI-tree and various PMICs.
+
+	  Note: your board's devicetree must include a "compatible =
+	  google,apex-power" stanza somewhere in it for this driver to
+	  function.
+
+	  If you don't know what this is, you should say N here.
+
 source "drivers/tty/hvc/Kconfig"
 
 config VIRTIO_CONSOLE
