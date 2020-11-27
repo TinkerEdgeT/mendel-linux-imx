@@ -23,6 +23,15 @@ struct tc358762_panel {
 	u32 height_mm;
 };
 
+u32 gHSR = 0xFF;
+u32 gHBPR = 0xFF;
+u32 gHDISP = 0xFF;
+u32 gHFPR = 0xFF;
+u32 gVSR= 0xFF;
+u32 gVBPR = 0xFF;
+u32 gVDISP = 0xFF;
+u32 gVFPR = 0xFF;
+
 static inline struct tc358762_panel *to_tc358762_panel(struct drm_panel *panel)
 {
 	return container_of(panel, struct tc358762_panel, base);
@@ -40,12 +49,29 @@ static void tc358762_gen_write(struct mipi_dsi_device *dsi, const void *data, si
 
 #define tc358762_gen_write_seq(dsi, seq...) \
 ({\
-	static const u8 d[] = { seq };\
-	tc358762_gen_write(dsi, d, ARRAY_SIZE(d));\
+	u8 d[] = { seq };\
+	tc358762_gen_write(dsi, (const void *)d, ARRAY_SIZE(d));\
 })
 
 static int tc358762_dsi_init(struct mipi_dsi_device *dsi)
 {
+	u8 hsr_lsb = gHSR & 0xff;
+	u8 hsr_msb = (gHSR >> 8) & 0xff;
+	u8 hbpr_lsb = gHBPR & 0xff;
+	u8 hbpr_msb = (gHBPR >> 8) & 0xff;
+	u8 hdisp_lsb = gHDISP& 0xff;
+	u8 hdisp_msb = (gHDISP >> 8)  & 0xff;
+	u8 hfpr_lsb = gHFPR & 0xff;
+	u8 hfpr_msb =(gHFPR>> 8) & 0xff;
+	u8 vsr_lsb = gVSR & 0xff;
+	u8 vsr_msb = (gVSR >> 8) & 0xff;
+	u8 vbpr_lsb = gVBPR & 0xff;
+	u8 vbpr_msb = (gVBPR >> 8) & 0xff;
+	u8 vdisp_lsb = gVDISP& 0xff;
+	u8 vdisp_msb = (gVDISP >> 8)  & 0xff;
+	u8 vfpr_lsb = gVFPR & 0xff;
+	u8 vfpr_msb =(gVFPR>> 8) & 0xff;
+
 	tc358762_gen_write_seq(dsi, 0x10, 0x02, 0x03, 0x00, 0x00, 0x00);//LANE
 	tc358762_gen_write_seq(dsi, 0x64, 0x01, 0x0c, 0x00, 0x00, 0x00);//D0S_CLRSIPOCOUNT
 	tc358762_gen_write_seq(dsi, 0x68, 0x01, 0x0c, 0x00, 0x00, 0x00);//D1S_CLRSIPOCOUNT
@@ -54,10 +80,10 @@ static int tc358762_dsi_init(struct mipi_dsi_device *dsi)
 	tc358762_gen_write_seq(dsi, 0x14, 0x01, 0x15, 0x00, 0x00, 0x00);//LPTXTIMCNT
 	tc358762_gen_write_seq(dsi, 0x50, 0x04, 0x60, 0x00, 0x00, 0x00);//SPICMR/SPICTRL
 	tc358762_gen_write_seq(dsi, 0x20, 0x04, 0x52, 0x01, 0x10, 0x00);//PORT/LCDCTRL
-	tc358762_gen_write_seq(dsi, 0x24, 0x04, 0x14, 0x00, 0x1A, 0x00);//HSR(20)[0:15]/HBPR(26)
-	tc358762_gen_write_seq(dsi, 0x28, 0x04, 0x20, 0x03, 0x5F, 0x01);//HDISP(800)[0:15]/HFPR(351)
-	tc358762_gen_write_seq(dsi, 0x2c, 0x04, 0x03, 0x00, 0x13, 0x00);//VSR(3)[0:15]/VBFR(19)
-	tc358762_gen_write_seq(dsi, 0x30, 0x04, 0xe0, 0x01, 0x7B, 0x00);//VDISP(480)[0:15]/VFPR(123)
+	tc358762_gen_write_seq(dsi, 0x24, 0x04, hsr_lsb, hsr_msb, hbpr_lsb, hbpr_msb);//HSR/HBPR
+	tc358762_gen_write_seq(dsi, 0x28, 0x04, hdisp_lsb , hdisp_msb , hfpr_lsb, hfpr_msb);//HDISP(800)[0:15]/HFPR
+	tc358762_gen_write_seq(dsi, 0x2c, 0x04, vsr_lsb, vsr_msb,  vbpr_lsb,  vbpr_msb);//VSR/VBPR
+	tc358762_gen_write_seq(dsi, 0x30, 0x04, vdisp_lsb, vdisp_msb, vfpr_lsb , vfpr_msb);//VDISP(480)[0:15]/VFPR
 	tc358762_gen_write_seq(dsi, 0x34, 0x04, 0x01, 0x00, 0x00, 0x00);//VFUEN
 	tc358762_gen_write_seq(dsi, 0x64, 0x04, 0x0f, 0x04, 0x00, 0x00);//SYSCTRL
 	tc358762_gen_write_seq(dsi, 0x04, 0x01, 0x01, 0x00, 0x00, 0x00);//STARTPPI
@@ -227,6 +253,22 @@ static const struct display_timing tc358762_default_timing = {
 		DISPLAY_FLAGS_PIXDATA_NEGEDGE,
 };
 
+static const struct display_timing waveshare_5inch_timing = {
+	.pixelclock = { 27000000, 27000000, 27000000 },
+	.hactive = { 800, 800, 800 },
+	.hfront_porch = { 1, 1, 1 },
+	.hsync_len = { 2, 2, 2 },
+	.hback_porch = { 52, 52, 52 },
+	.vactive = { 480, 480, 480 },
+	.vfront_porch = { 7, 7, 7},
+	.vsync_len = { 2, 2, 2 },
+	.vback_porch = { 21, 21, 21 },
+	.flags = DISPLAY_FLAGS_HSYNC_LOW |
+		 DISPLAY_FLAGS_VSYNC_LOW |
+		 DISPLAY_FLAGS_DE_LOW |
+		DISPLAY_FLAGS_PIXDATA_NEGEDGE,
+};
+
 int tc358762_dsi_probe(struct mipi_dsi_device *dsi)
 {
 	struct device *dev = &dsi->dev;
@@ -248,8 +290,24 @@ int tc358762_dsi_probe(struct mipi_dsi_device *dsi)
 	dsi->lanes = 1;
 
 	ret = of_get_videomode(np, &panel->vm, 0);
-	if (ret < 0)
-		videomode_from_timing(&tc358762_default_timing, &panel->vm);
+	if (ret < 0){
+		bool waveshare_5_inch = of_property_read_bool(np, "waveshare_5_inch");
+
+		printk("tc358762_dsi_probe waveshare_5_inch = %d\n", waveshare_5_inch);
+		if (waveshare_5_inch)
+			videomode_from_timing(&waveshare_5inch_timing, &panel->vm);
+		else
+			videomode_from_timing(&tc358762_default_timing, &panel->vm);
+	}
+
+	gHSR = panel->vm.hsync_len;
+	gHBPR = panel->vm.hback_porch;
+	gHDISP = panel->vm.hactive;
+	gHFPR = panel->vm.hfront_porch;
+	gVSR= panel->vm.vsync_len;
+	gVBPR = panel->vm.vback_porch;
+	gVDISP = panel->vm.vactive;
+	gVFPR = panel->vm.vfront_porch;
 
 	panel->backlight =  tinker_mcu_get_backlightdev();
 	if (!panel->backlight) {
