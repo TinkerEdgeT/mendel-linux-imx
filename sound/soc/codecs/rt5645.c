@@ -22,6 +22,7 @@
 #include <linux/acpi.h>
 #include <linux/dmi.h>
 #include <linux/regulator/consumer.h>
+#include <linux/device.h>
 #include <sound/core.h>
 #include <sound/pcm.h>
 #include <sound/pcm_params.h>
@@ -399,6 +400,8 @@ struct rt5645_priv {
 	struct regmap *regmap;
 	struct i2c_client *i2c;
 	struct gpio_desc *gpiod_hp_det;
+	bool hp_det_forced;
+	bool hp_det_forced_state;
 	struct snd_soc_jack *hp_jack;
 	struct snd_soc_jack *mic_jack;
 	struct snd_soc_jack *btn_jack;
@@ -3263,7 +3266,13 @@ static void rt5645_jack_detect_work(struct work_struct *work)
 	switch (rt5645->pdata.jd_mode) {
 	case 0: /* Not using rt5645 JD */
 		if (rt5645->gpiod_hp_det) {
-			gpio_state = gpiod_get_value(rt5645->gpiod_hp_det);
+			// If hp-detection is forced into a state,
+			// use that instead of checking the GPIO.
+			if (rt5645->hp_det_forced) {
+				gpio_state = rt5645->hp_det_forced_state ? 1 : 0;
+			} else {
+				gpio_state = gpiod_get_value(rt5645->gpiod_hp_det);
+			}
 			report = rt5645_jack_detect(rt5645->codec, gpio_state);
 		}
 		snd_soc_jack_report(rt5645->hp_jack,
@@ -3669,6 +3678,51 @@ static int rt5645_parse_dt(struct rt5645_priv *rt5645, struct device *dev)
 	return 0;
 }
 
+static ssize_t force_hp_detect_show(struct device *dev, struct device_attribute *attr,
+		char *buf) {
+	struct rt5645_priv *rt5645 = dev_get_drvdata(dev);
+	if (rt5645->hp_det_forced) {
+		if (rt5645->hp_det_forced_state) {
+			return scnprintf(buf, PAGE_SIZE, "[hp] speaker plug\n");
+		} else {
+			return scnprintf(buf, PAGE_SIZE, "hp [speaker] plug\n");
+		}
+	} else {
+		return scnprintf(buf, PAGE_SIZE, "hp speaker [plug]\n");
+	}
+}
+
+static ssize_t force_hp_detect_store(struct device *dev, struct device_attribute *attr,
+		const char *buf, size_t n) {
+	struct rt5645_priv *rt5645 = dev_get_drvdata(dev);
+
+	if (sysfs_streq(buf, "hp")) {
+		rt5645->hp_det_forced = true;
+		rt5645->hp_det_forced_state = true;
+	} else if (sysfs_streq(buf, "speaker")) {
+		rt5645->hp_det_forced = true;
+		rt5645->hp_det_forced_state = false;
+	} else if (sysfs_streq(buf, "plug")) {
+		rt5645->hp_det_forced = false;
+		rt5645->hp_det_forced_state = false;
+	}
+
+	queue_delayed_work(system_power_efficient_wq,
+			   &rt5645->jack_detect_work, msecs_to_jiffies(250));
+
+	return n;
+}
+
+static DEVICE_ATTR_RW(force_hp_detect);
+
+static struct attribute *rt5645_device_attrs[] = {
+	&dev_attr_force_hp_detect.attr,
+	NULL,
+};
+static const struct attribute_group rt5645_device_group = {
+	.attrs = rt5645_device_attrs,
+};
+
 static int rt5645_i2c_probe(struct i2c_client *i2c,
 		    const struct i2c_device_id *id)
 {
@@ -3702,6 +3756,12 @@ static int rt5645_i2c_probe(struct i2c_client *i2c,
 		dev_err(&i2c->dev, "failed to initialize gpiod\n");
 		return PTR_ERR(rt5645->gpiod_hp_det);
 	}
+	rt5645->hp_det_forced = false;
+	rt5645->hp_det_forced_state = false;
+
+	ret = sysfs_create_group(&i2c->dev.kobj, &rt5645_device_group);
+	if (ret)
+		return ret;
 
 	for (i = 0; i < ARRAY_SIZE(rt5645->supplies); i++)
 		rt5645->supplies[i].supply = rt5645_supply_names[i];
@@ -3931,6 +3991,8 @@ static int rt5645_i2c_remove(struct i2c_client *i2c)
 
 	snd_soc_unregister_codec(&i2c->dev);
 	regulator_bulk_disable(ARRAY_SIZE(rt5645->supplies), rt5645->supplies);
+
+	sysfs_remove_group(&i2c->dev.kobj, &rt5645_device_group);
 
 	return 0;
 }
